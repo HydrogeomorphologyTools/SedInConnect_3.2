@@ -103,7 +103,7 @@ class Logger(object):
 
 def run_cli(args):
     """Run in command line mode"""
-    print(f"SedInConnect 3.1 CLI: DTM = {args.dtm}")
+    print(f"SedInConnect 3.2 CLI: DTM = {args.dtm}")
     
     if args.params and os.path.exists(args.params):
         print(f"Loading parameters from {args.params}")
