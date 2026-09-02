@@ -47,9 +47,7 @@ class ProcessingThread(QThread):
         super().__init__()
         self.params = params
         self.processor = processor
-        self.processor.log = self.console_output.emit
-        if hasattr(self.processor, 'weight_calc'):
-            self.processor.weight_calc.log = self.console_output.emit
+        self.processor._user_log = self.console_output.emit
 
     def run(self):
         try:

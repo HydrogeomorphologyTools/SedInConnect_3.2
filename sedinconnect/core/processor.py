@@ -28,11 +28,15 @@ class ConnectivityProcessor:
     def __init__(self, log_func=print):
         self._user_log = log_func
         self.log_history: List[str] = []
-        def capturing_logger(msg):
-            self.log_history.append(str(msg))
-            self._user_log(msg)
-        self.log = capturing_logger
         self.weight_calc = WeightCalculator(self.log)
+
+    def log(self, msg):
+        self.log_history.append(str(msg))
+        if self._user_log:
+            try:
+                self._user_log(msg)
+            except Exception:
+                pass
 
     # ------------------------------------------------------------------
     # Public entry point
@@ -131,56 +135,67 @@ class ConnectivityProcessor:
                 params.dtm_path = params.original_dtm_path
 
     def _write_run_log(self, params: ProcessingParams, start_time: float, elapsed: float, status: str, error_msg: Optional[str] = None):
-        """Append a structured execution record to sedinconnect_runs.log"""
+        """Append a structured execution record to sedinconnect_runs.log in application dir and output dir"""
         if not getattr(params, 'save_run_log', True):
             return
         try:
-            target_dir = None
+            target_dirs = []
+
+            # 1. Application directory (where exe or script is located)
+            if getattr(sys, 'frozen', False):
+                app_dir = Path(sys.executable).parent
+            else:
+                app_dir = Path(__file__).resolve().parent.parent.parent
+            if app_dir.exists():
+                target_dirs.append(app_dir)
+
+            # 2. Output raster directory (if different from app_dir)
             if params.output_path:
                 try:
-                    target_dir = Path(params.output_path).parent
+                    out_dir = Path(params.output_path).parent
+                    if out_dir.exists() and out_dir not in target_dirs:
+                        target_dirs.append(out_dir)
                 except Exception:
                     pass
-            if not target_dir or not target_dir.exists():
-                if params.dtm_path:
-                    try:
-                        target_dir = Path(params.dtm_path).parent
-                    except Exception:
-                        pass
-            if not target_dir or not target_dir.exists():
-                target_dir = Path.cwd()
 
-            log_file = target_dir / "sedinconnect_runs.log"
             now_str = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(start_time))
+            entry_text = (
+                "=" * 80 + "\n"
+                f"[RUN LOG ENTRY] - {now_str}\n"
+                f"Software:        SedInConnect 3.2 (Morpheus PRIN 2023-2026 Project)\n"
+                f"Execution State: {status} (Elapsed Time: {elapsed:.2f} s)\n"
+                "\n--- INPUTS & PARAMETERS ---\n"
+                f"DTM Raster:      {params.dtm_path}\n"
+                f"Cell Size:       {params.cell_size} m\n"
+                f"Target Feature:  {params.target_path if params.target_path else 'None (Catchment Outlet Mode)'}\n"
+                f"Sink Feature:    {params.sink_path if params.sink_path else 'None'}\n"
+                f"Weight Option:   {'Automatic Cavalli (2013) Roughness' if params.use_cavalli_weight else f'Custom Raster ({params.weight_path})'}\n"
+                f"Window Size:     {params.window_size}x{params.window_size} px\n"
+                f"Log-Normalize W: {params.normalize_weight}\n"
+                f"Fill DTM Pits:   {params.fill_dtm}\n"
+                f"CPU Workers:     {params.n_workers if params.n_workers else 'Auto'}\n"
+                f"Chunk Size:      {params.chunk_size} px\n"
+                "\n--- OUTPUTS ---\n"
+                f"Connectivity IC: {params.output_path}\n"
+            )
+            if params.roughness_path: entry_text += f"Roughness RI:    {params.roughness_path}\n"
+            if params.weight_output_path: entry_text += f"Weight Factor W: {params.weight_output_path}\n"
+            if params.d_up_path: entry_text += f"D_up Raster:     {params.d_up_path}\n"
+            if params.d_down_path: entry_text += f"D_down Raster:   {params.d_down_path}\n"
+            if error_msg:
+                entry_text += f"\n--- ERROR DETAILS ---\n{error_msg}\n"
+            entry_text += "\n--- EXECUTION LOG ---\n"
+            for line in self.log_history:
+                entry_text += f"  {line}\n"
+            entry_text += "=" * 80 + "\n\n"
 
-            with open(log_file, "a", encoding="utf-8") as f:
-                f.write("=" * 80 + "\n")
-                f.write(f"[RUN LOG ENTRY] - {now_str}\n")
-                f.write(f"Software:        SedInConnect 3.2 (Morpheus PRIN 2023-2026 Project)\n")
-                f.write(f"Execution State: {status} (Elapsed Time: {elapsed:.2f} s)\n")
-                f.write("\n--- INPUTS & PARAMETERS ---\n")
-                f.write(f"DTM Raster:      {params.dtm_path}\n")
-                f.write(f"Cell Size:       {params.cell_size} m\n")
-                f.write(f"Target Feature:  {params.target_path if params.target_path else 'None (Catchment Outlet Mode)'}\n")
-                f.write(f"Sink Feature:    {params.sink_path if params.sink_path else 'None'}\n")
-                f.write(f"Weight Option:   {'Automatic Cavalli (2013) Roughness' if params.use_cavalli_weight else f'Custom Raster ({params.weight_path})'}\n")
-                f.write(f"Window Size:     {params.window_size}x{params.window_size} px\n")
-                f.write(f"Log-Normalize W: {params.normalize_weight}\n")
-                f.write(f"Fill DTM Pits:   {params.fill_dtm}\n")
-                f.write(f"CPU Workers:     {params.n_workers if params.n_workers else 'Auto'}\n")
-                f.write(f"Chunk Size:      {params.chunk_size} px\n")
-                f.write("\n--- OUTPUTS ---\n")
-                f.write(f"Connectivity IC: {params.output_path}\n")
-                if params.roughness_path: f.write(f"Roughness RI:    {params.roughness_path}\n")
-                if params.weight_output_path: f.write(f"Weight Factor W: {params.weight_output_path}\n")
-                if params.d_up_path: f.write(f"D_up Raster:     {params.d_up_path}\n")
-                if params.d_down_path: f.write(f"D_down Raster:   {params.d_down_path}\n")
-                if error_msg:
-                    f.write(f"\n--- ERROR DETAILS ---\n{error_msg}\n")
-                f.write("\n--- EXECUTION LOG ---\n")
-                for line in self.log_history:
-                    f.write(f"  {line}\n")
-                f.write("=" * 80 + "\n\n")
+            for t_dir in target_dirs:
+                try:
+                    log_file = t_dir / "sedinconnect_runs.log"
+                    with open(log_file, "a", encoding="utf-8") as f:
+                        f.write(entry_text)
+                except Exception:
+                    pass
         except Exception:
             pass
 
