@@ -13,8 +13,9 @@ import urllib.request
 from pathlib import Path
 from typing import Optional
 
-MEASUREMENT_ID = os.environ.get("SEDINCONNECT_GA_MID", "G-XXXXXXXXXX")
-API_SECRET = os.environ.get("SEDINCONNECT_GA_SECRET", "YOUR_API_SECRET_KEY")
+MEASUREMENT_ID = "G-9047MQK3FC"
+API_SECRET = "WlQI-FJwQAiK0bssPyWmpA"
+GA_ENDPOINT = f"https://www.google-analytics.com/mp/collect?measurement_id={MEASUREMENT_ID}&api_secret={API_SECRET}"
 
 _cached_ip = None
 
@@ -55,15 +56,11 @@ def _get_anonymous_client_id() -> str:
 
 def _send_payload_async(payload: dict):
     """Send payload to Google Analytics endpoint in a background daemon thread."""
-    if "XXXXXXXXXX" in MEASUREMENT_ID or "YOUR_API" in API_SECRET:
-        return
-
     def _worker():
         try:
-            url = f"https://www.google-analytics.com/mp/collect?measurement_id={MEASUREMENT_ID}&api_secret={API_SECRET}"
             data = json.dumps(payload).encode("utf-8")
             req = urllib.request.Request(
-                url,
+                GA_ENDPOINT,
                 data=data,
                 headers={"Content-Type": "application/json", "User-Agent": "SedInConnect/3.2"},
                 method="POST"
