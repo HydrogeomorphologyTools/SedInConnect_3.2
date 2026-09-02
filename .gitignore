@@ -41,6 +41,11 @@ wheels/
 *.cpg
 *.qpj
 
+# Whitelist test_data folder completely
+!test_data/
+!test_data/*
+!test_data/**/*
+
 # IDEs and OS
 .idea/
 .vscode/
