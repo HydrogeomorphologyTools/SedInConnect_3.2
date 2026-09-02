@@ -6,6 +6,7 @@ Provides non-blocking, privacy-preserving usage monitoring for research impact r
 import os
 import sys
 import json
+import time
 import uuid
 import platform
 import threading
@@ -65,7 +66,7 @@ def _send_payload_async(payload: dict):
                 headers={"Content-Type": "application/json", "User-Agent": "SedInConnect/3.2"},
                 method="POST"
             )
-            with urllib.request.urlopen(req, timeout=2.5) as response:
+            with urllib.request.urlopen(req, timeout=3.0) as response:
                 pass
         except Exception:
             pass
@@ -81,17 +82,19 @@ def track_app_launch(mode: str = "GUI"):
     """
     try:
         cid = _get_anonymous_client_id()
+        session_id = str(int(time.time()))
         payload = {
             "client_id": cid,
             "events": [{
                 "name": "app_launch",
                 "params": {
+                    "session_id": session_id,
                     "version": "3.2",
                     "mode": mode,
                     "client_ip": _get_public_ip(),
                     "os": platform.system(),
                     "os_version": platform.release(),
-                    "engagement_time_msec": "100"
+                    "engagement_time_msec": 100
                 }
             }]
         }
@@ -114,11 +117,13 @@ def track_analysis_run(
     """
     try:
         cid = _get_anonymous_client_id()
+        session_id = str(int(time.time()))
         payload = {
             "client_id": cid,
             "events": [{
                 "name": "analysis_completed",
                 "params": {
+                    "session_id": session_id,
                     "version": "3.2",
                     "mode": mode,
                     "client_ip": _get_public_ip(),
@@ -128,7 +133,7 @@ def track_analysis_run(
                     "fill_dtm": bool(fill_dtm),
                     "duration_s": round(float(duration_s), 2),
                     "status": status,
-                    "engagement_time_msec": "1000"
+                    "engagement_time_msec": 1000
                 }
             }]
         }

@@ -17,6 +17,7 @@ from PyQt5.QtGui import QFont, QPixmap, QPalette, QBrush, QTextCursor
 from sedinconnect.core.processor import ConnectivityProcessor
 from sedinconnect.utils.params import ProcessingParams
 from sedinconnect.gui.dialogs import ResultPreviewDialog
+from sedinconnect.utils.telemetry import track_app_launch
 
 def resource_path(relative_path):
     """ Get absolute path to resource, works for dev, package, and PyInstaller """
@@ -73,6 +74,10 @@ class ModernConnectivityGUI(QMainWindow):
 
     def __init__(self, processor_class=ConnectivityProcessor):
         super().__init__()
+        try:
+            track_app_launch("GUI")
+        except Exception:
+            pass
         self.processor = processor_class()
         self.worker_thread = None
         self.init_ui()
