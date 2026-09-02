@@ -33,10 +33,16 @@ class ConnectivityProcessor:
         self.weight_calc = WeightCalculator(self.log)
 
     def log(self, msg):
-        self.log_history.append(str(msg))
+        time_tag = time.strftime("[%H:%M:%S]")
+        msg_str = str(msg)
+        if not (msg_str.startswith("[") and len(msg_str) >= 10 and msg_str[9] == "]"):
+            formatted_msg = f"{time_tag} {msg_str}"
+        else:
+            formatted_msg = msg_str
+        self.log_history.append(formatted_msg)
         if self._user_log:
             try:
-                self._user_log(msg)
+                self._user_log(formatted_msg)
             except Exception:
                 pass
 
@@ -53,9 +59,10 @@ class ConnectivityProcessor:
         filtered_dtm_path = None
 
         try:
-            self.log("Starting process...")
+            self.log("--- Starting SedInConnect 3.2 Processing ---")
 
             # 0. Filter DTM (values < 0 or > 9000 to NoData)
+            self.log("[STAGE 1/4] DTM Conditioning & Pre-processing...")
             self.log("Filtering DTM (masking values < 0 or > 9000)...")
             filtered_dtm_path = self.filter_dtm(params.dtm_path)
             if filtered_dtm_path:
@@ -64,7 +71,7 @@ class ConnectivityProcessor:
 
             # 1. Optional pit filling
             if params.fill_dtm:
-                self.log("Filling DTM depressions (pit removal)...")
+                self.log("Filling DTM depressions (Priority-Flood pit removal)...")
                 with LargeFileRasterReader(params.dtm_path) as reader:
                     dem_arr = reader.read_array()
                     geotransform = reader.geotransform
@@ -79,7 +86,7 @@ class ConnectivityProcessor:
             # 2. Handle Sinks
             sink_flag = 0
             if params.sink_path:
-                self.log("Sinks detected, starting extraction...")
+                self.log("Sinks detected, extracting sink catchments...")
                 self.process_sinks(params.dtm_path, params.sink_path, params.cell_size)
                 if params.original_dtm_path is None:
                     params.original_dtm_path = params.dtm_path
@@ -88,7 +95,8 @@ class ConnectivityProcessor:
 
             # 3. Handle Weight
             if params.use_cavalli_weight:
-                self.log("Computing Cavalli weighting factor...")
+                self.log("[STAGE 2/4] Computing Surface Roughness & Cavalli Weight Factor (W)...")
+                t_w_start = time.time()
                 weight_out = Path(params.weight_output_path) if params.weight_output_path else (params.dtm_path.parent / "weight.tif")
                 roughness_out = Path(params.roughness_path) if params.roughness_path else (params.dtm_path.parent / "roughness.tif")
                 params.weight_path = self.weight_calc.compute(
@@ -100,10 +108,13 @@ class ConnectivityProcessor:
                 )
                 params.roughness_path = roughness_out
                 params.weight_output_path = weight_out
+                self.log(f"Roughness and Weight calculation completed in {time.time() - t_w_start:.2f} s")
+            else:
+                self.log("[STAGE 2/4] Using custom user Weight Factor raster.")
 
             # 4. Compute Connectivity
             if params.target_path:
-                self.log("Computing connectivity to TARGETS...")
+                self.log("[STAGE 3/4 & 4/4] Computing connectivity to TARGETS...")
                 self.compute_connectivity_targets(
                     params.dtm_path, params.cell_size,
                     params.target_path, params.weight_path,
@@ -111,14 +122,15 @@ class ConnectivityProcessor:
                     sink_flag, params
                 )
             else:
-                self.log("Computing connectivity to OUTLET...")
+                self.log("[STAGE 3/4 & 4/4] Computing connectivity to OUTLET...")
                 self.compute_connectivity_outlet(
                     params.dtm_path, params.cell_size,
                     params.weight_path, params.output_path,
                     params.save_components, sink_flag, params
                 )
 
-            self.log("Processing successfully completed!")
+            total_elapsed = time.time() - t_start
+            self.log(f"Processing successfully completed in {total_elapsed:.2f} s!")
         except Exception as e:
             status = "FAILED"
             import traceback
@@ -172,12 +184,17 @@ class ConnectivityProcessor:
                 except Exception:
                     pass
 
-            now_str = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(start_time))
+            start_str = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(start_time))
+            end_time = start_time + elapsed
+            end_str = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(end_time))
             entry_text = (
                 "=" * 80 + "\n"
-                f"[RUN LOG ENTRY] - {now_str}\n"
+                f"[RUN LOG ENTRY] - {start_str}\n"
                 f"Software:        SedInConnect 3.2 (Morpheus PRIN 2023-2026 Project)\n"
-                f"Execution State: {status} (Elapsed Time: {elapsed:.2f} s)\n"
+                f"Execution State: {status}\n"
+                f"Started At:      {start_str}\n"
+                f"Finished At:     {end_str}\n"
+                f"Total Runtime:   {elapsed:.2f} s\n"
                 "\n--- INPUTS & PARAMETERS ---\n"
                 f"DTM Raster:      {params.dtm_path}\n"
                 f"Cell Size:       {params.cell_size} m\n"
@@ -198,7 +215,7 @@ class ConnectivityProcessor:
             if params.d_down_path: entry_text += f"D_down Raster:   {params.d_down_path}\n"
             if error_msg:
                 entry_text += f"\n--- ERROR DETAILS ---\n{error_msg}\n"
-            entry_text += "\n--- EXECUTION LOG ---\n"
+            entry_text += "\n--- TIMED EXECUTION LOG ---\n"
             for line in self.log_history:
                 entry_text += f"  {line}\n"
             entry_text += "=" * 80 + "\n\n"
