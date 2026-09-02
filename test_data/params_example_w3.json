@@ -1,0 +1,21 @@
+{
+  "dtm_path": "D:\\Research\\SedInConnect_python\\SedInConnect_repo\\test_data\\dtmfel.tif",
+  "cell_size": 2.5,
+  "output_path": "D:\\Research\\SedInConnect_python\\SedInConnect_repo\\test_data\\ic_target_w3.tif",
+  "weight_path": "D:\\Research\\SedInConnect_python\\SedInConnect_repo\\test_data\\weight_w3.tif",
+  "target_path": "D:\\Research\\SedInConnect_python\\SedInConnect_repo\\test_data\\target.shp",
+  "sink_path": null,
+  "use_cavalli_weight": true,
+  "normalize_weight": false,
+  "save_components": false,
+  "window_size": 3,
+  "original_dtm_path": null,
+  "roughness_path": "D:\\Research\\SedInConnect_python\\SedInConnect_repo\\test_data\\roughness_w3.tif",
+  "weight_output_path": "D:\\Research\\SedInConnect_python\\SedInConnect_repo\\test_data\\weight_w3.tif",
+  "d_up_path": null,
+  "d_down_path": null,
+  "show_preview": true,
+  "fill_dtm": false,
+  "n_workers": 8,
+  "chunk_size": 1024
+}

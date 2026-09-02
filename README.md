@@ -145,6 +145,19 @@ python main.py
 
 ---
 
+---
+
+## 📂 Sample Test Dataset
+
+A sample dataset is provided in the [	est_data/](test_data/) directory for testing and verification:
+* **dtmfel.tif:** Sample hydrologically conditioned DTM (2.5 m resolution).
+* **	arget.shp:** Stream channel network target shapefile.
+* **sink_strimm_gadria.shp:** Example internal sink / retention basin shapefile.
+* **ic_target_w3.tif:** Reference Index of Connectivity raster computed with automatic Cavalli weight ( \times 3$ window).
+* **
+oughness_w3.tif & weight_w3.tif:** Reference intermediate surface roughness ($) and weighting factor ($) rasters.
+* **params_example_w3.json:** Example configuration file ready to be loaded in the GUI via **Load Parameters** or via CLI with --params.
+
 ## 🇪🇺 Funding & Acknowledgements
 
 This software has been developed as part of the research activities within the project:  
