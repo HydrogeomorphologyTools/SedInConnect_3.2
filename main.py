@@ -95,8 +95,14 @@ class Logger(object):
             except Exception:
                 pass
 
+from sedinconnect.utils.telemetry import track_app_launch
+
 def run_cli(args):
     """Run in command line mode"""
+    try:
+        track_app_launch("CLI")
+    except Exception:
+        pass
     print(f"SedInConnect 3.2 CLI: DTM = {args.dtm}")
     
     if args.params and os.path.exists(args.params):
@@ -211,9 +217,14 @@ def main():
         from PyQt5 import QtWidgets, QtGui, QtCore
         from sedinconnect.gui.main_window import ModernConnectivityGUI
 
+        try:
+            track_app_launch("GUI")
+        except Exception:
+            pass
+
         if sys.platform == 'win32':
             try:
-                myappid = 'sedin.connect.3.1'
+                myappid = 'sedin.connect.3.2'
                 ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
             except Exception:
                 pass

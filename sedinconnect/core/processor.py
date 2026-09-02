@@ -9,6 +9,7 @@ from typing import Optional, List
 from sedinconnect.utils.params import ProcessingParams
 from sedinconnect.utils.raster import LargeFileRasterReader, save_raster
 from sedinconnect.utils.vector import rasterize_vector, rasterize_vector_burn
+from sedinconnect.utils.telemetry import track_analysis_run
 from sedinconnect.core.weight import WeightCalculator
 from sedinconnect.core.hydrology import propagate_d8_codes, compute_weighted_flow_length
 from sedinconnect.core.native.pitfill import fill_dem
@@ -126,6 +127,18 @@ class ConnectivityProcessor:
         finally:
             elapsed = time.time() - t_start
             self._write_run_log(params, t_start, elapsed, status, error_detail)
+            try:
+                track_analysis_run(
+                    mode="GUI" if getattr(params, 'show_preview', True) else "CLI",
+                    target_mode="targets" if params.target_path else "outlet",
+                    weight_mode="cavalli_auto" if params.use_cavalli_weight else "custom",
+                    window_size=getattr(params, 'window_size', 5),
+                    fill_dtm=getattr(params, 'fill_dtm', False),
+                    duration_s=elapsed,
+                    status=status.lower()
+                )
+            except Exception:
+                pass
             if filtered_dtm_path and filtered_dtm_path.exists():
                 try:
                     filtered_dtm_path.unlink(missing_ok=True)
