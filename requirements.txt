@@ -1,0 +1,6 @@
+numpy>=1.22.0
+scipy>=1.8.0
+GDAL>=3.4.0
+PyQt5>=5.15.0
+matplotlib>=3.5.0
+numba>=0.56.0

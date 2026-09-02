@@ -1,0 +1,16 @@
+{
+  "dtm_path": "D:\\Research\\SedInConnect_python\\dtmfel.tif",
+  "cell_size": 2.5,
+  "output_path": "D:\\Research\\SedInConnect_python\\ic_pippo.tif",
+  "weight_path": "D:\\Research\\SedInConnect_python\\w.tif",
+  "target_path": "D:\\Research\\SedInConnect_python\\target.shp",
+  "sink_path": null,
+  "use_cavalli_weight": true,
+  "normalize_weight": false,
+  "save_components": false,
+  "window_size": 5,
+  "original_dtm_path": null,
+  "roughness_path": null,
+  "weight_output_path": null,
+  "fill_dtm": false
+}

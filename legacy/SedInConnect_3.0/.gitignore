@@ -1,0 +1,53 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual Environment
+venv*/
+.venv/
+
+# GDAL / Temp Data
+*.tif
+*.tiff
+*.shp
+*.shx
+*.dbf
+*.prj
+*.cpg
+*.qpj
+*.json
+*.log
+
+# Build directories
+build_nuitka/
+*.build/
+*.dist/
+*.onefile-build/
+
+# IDEs
+.vscode/
+.idea/
+
+# Local/Test files
+SedInConnect_3_0_test.py
+debug_*.py
+test_*.py
