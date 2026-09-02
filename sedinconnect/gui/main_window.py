@@ -271,7 +271,7 @@ Copyright (C) 2014-2026 CNR-IRPI, Padova (Italy)
 Licensed under GNU GPL v2
 
 Based on: Cavalli et al., 2013 - Geomorphology
-Developed within the MORPHEUS Project framework
+Developed within the MORPHEUS PRIN 2023-2026 Project framework
 ###############################################################################
 
 Ready to start processing...
@@ -310,7 +310,7 @@ Ready to start processing...
         description_scroll.setStyleSheet("QScrollArea { border: none; background: transparent; }")
 
         description = QLabel(
-            "<b>MORPHEUS Project</b><br>"
+            "<b>MORPHEUS PRIN 2023-2026 Project</b><br>"
             "<i>GeoMORPHomEtry throUgh Scales for a resilient landscape</i><br><br>"
             "Understanding sediment dynamics and connectivity through geomorphometric "
             "techniques at multiple spatial and temporal scales.<br><br>"
@@ -367,7 +367,7 @@ Ready to start processing...
         return sidebar
 
     def _add_logo_placeholder(self, layout):
-        l = QLabel("MORPHEUS\nProject")
+        l = QLabel("MORPHEUS\nPRIN 2023-2026")
         l.setFont(QFont("Arial", 18, QFont.Bold))
         l.setAlignment(Qt.AlignCenter)
         l.setStyleSheet("color: #2196F3; padding: 20px;")
@@ -529,6 +529,11 @@ Ready to start processing...
         self.show_preview_cb = QCheckBox("Show results preview (map & distribution charts)")
         self.show_preview_cb.setChecked(True)
         layout.addWidget(self.show_preview_cb, 8, 0, 1, 3)
+
+        # Row 9: Save Run Log Checkbox (Default TRUE)
+        self.save_run_log_cb = QCheckBox("Save execution run log (sedinconnect_runs.log)")
+        self.save_run_log_cb.setChecked(True)
+        layout.addWidget(self.save_run_log_cb, 9, 0, 1, 3)
 
         return group
 
@@ -902,7 +907,8 @@ Ready to start processing...
             show_preview=self.show_preview_cb.isChecked() if hasattr(self, 'show_preview_cb') else True,
             fill_dtm=self.fill_dtm_cb.isChecked() if hasattr(self, 'fill_dtm_cb') else False,
             n_workers=n_workers,
-            chunk_size=chunk_size
+            chunk_size=chunk_size,
+            save_run_log=self.save_run_log_cb.isChecked() if hasattr(self, 'save_run_log_cb') else True
         )
         return params
 
@@ -953,6 +959,8 @@ Ready to start processing...
                     self.workers_spin.setValue(int(p.n_workers))
                 if hasattr(self, 'chunk_size_combo') and getattr(p, 'chunk_size', None) is not None:
                     self.chunk_size_combo.setCurrentText(str(p.chunk_size))
+                if hasattr(self, 'save_run_log_cb'):
+                    self.save_run_log_cb.setChecked(getattr(p, 'save_run_log', True))
                 QMessageBox.information(self, "Success", "Parameters loaded!")
             except Exception as e: QMessageBox.critical(self, "Error", str(e))
 
@@ -1007,7 +1015,7 @@ Ready to start processing...
 <b>Version:</b> 3.2 (2026) &nbsp;|&nbsp; 
 <b>Authors:</b> Stefano Crema and Marco Cavalli &nbsp;|&nbsp; 
 <b>Affiliation:</b> CNR-IRPI (National Research Council - Research Institute for Geo-Hydrological Protection), Padova, Italy<br>
-<b>Framework:</b> Developed within the <i>MORPHEUS Project</i> (GeoMORPHomEtry throUgh Scales for a resilient landscape).
+<b>Framework:</b> Developed within the <i>MORPHEUS PRIN 2023-2026 Project</i> (GeoMORPHomEtry throUgh Scales for a resilient landscape).
 </p>
 <hr style="border: 0; height: 1px; background: #ccc; margin: 15px 0;">
 
@@ -1159,6 +1167,12 @@ adapted for mountain environments and high-resolution Digital Terrain Models (DT
     </td>
   </tr>
   <tr style="background-color: #fafafa;">
+    <td style="border: 1px solid #ddd; padding: 10px; vertical-align: top;"><b>Save execution run log</b></td>
+    <td style="border: 1px solid #ddd; padding: 10px;">
+      Appends a detailed, timestamped record of the execution parameters, input rasters, elapsed runtime, and status to <code>sedinconnect_runs.log</code> in the output directory.
+    </td>
+  </tr>
+  <tr>
     <td style="border: 1px solid #ddd; padding: 10px; vertical-align: top;"><b>Fill DTM depressions</b></td>
     <td style="border: 1px solid #ddd; padding: 10px;">
       Runs a high-performance Priority-Flood algorithm to automatically resolve spurious elevation depressions and pits before calculating flow directions.
@@ -1209,6 +1223,12 @@ adapted for mountain environments and high-resolution Digital Terrain Models (DT
       Built-in visualizer that opens upon completion, showing the spatial map of IC, the frequency distribution histogram, descriptive statistics (mean, median, std, min, max), and export tools to save publication-ready figures.
     </td>
   </tr>
+  <tr>
+    <td style="border: 1px solid #ddd; padding: 10px; vertical-align: top;"><b>Run History Log</b><br><span style="color: #555; font-size: 9pt;">[sedinconnect_runs.log]</span></td>
+    <td style="border: 1px solid #ddd; padding: 10px;">
+      Persistent log file automatically updated with timestamps, paths, window sizes, and execution logs for full scientific reproducibility.
+    </td>
+  </tr>
 </table>
 
 <h2 style="color: #2E7D32; border-bottom: 2px solid #2E7D32; padding-bottom: 4px; margin-top: 25px;">5. Key Scientific References</h2>
@@ -1224,7 +1244,7 @@ adapted for mountain environments and high-resolution Digital Terrain Models (DT
 <hr style="border: 0; height: 1px; background: #ccc; margin: 20px 0;">
 <p style="text-align: center; color: #777; font-size: 9.5pt;">
 <b>SedInConnect 3.2</b> — Licensed under GNU General Public License v2 (GPLv2)<br>
-CNR-IRPI Padova (Italy) &nbsp;|&nbsp; MORPHEUS Project
+CNR-IRPI Padova (Italy) &nbsp;|&nbsp; MORPHEUS PRIN 2023-2026 Project
 </p>
 </div>
         """

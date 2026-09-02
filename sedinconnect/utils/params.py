@@ -26,6 +26,7 @@ class ProcessingParams:
     fill_dtm: bool = False   # NEW in 3.1: run pit-fill before flow routing
     n_workers: Optional[int] = None
     chunk_size: int = 1024
+    save_run_log: bool = True
 
     def to_dict(self) -> dict:
         """Convert to dictionary for JSON serialization"""
@@ -57,6 +58,8 @@ class ProcessingParams:
             data['n_workers'] = None
         if 'chunk_size' not in data or data['chunk_size'] is None:
             data['chunk_size'] = 1024
+        if 'save_run_log' not in data:
+            data['save_run_log'] = True
         return cls(**data)
 
     def save_to_file(self, filepath: Path):

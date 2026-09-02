@@ -26,8 +26,13 @@ class ConnectivityProcessor:
     """
 
     def __init__(self, log_func=print):
-        self.log = log_func
-        self.weight_calc = WeightCalculator(log_func)
+        self._user_log = log_func
+        self.log_history: List[str] = []
+        def capturing_logger(msg):
+            self.log_history.append(str(msg))
+            self._user_log(msg)
+        self.log = capturing_logger
+        self.weight_calc = WeightCalculator(self.log)
 
     # ------------------------------------------------------------------
     # Public entry point
@@ -35,55 +40,61 @@ class ConnectivityProcessor:
 
     def process(self, params: ProcessingParams):
         """Execute processing based on parameters"""
-        self.log("Starting process...")
-
-        # 0. Filter DTM (values < 0 or > 9000 to NoData)
-        self.log("Filtering DTM (masking values < 0 or > 9000)...")
-        filtered_dtm_path = self.filter_dtm(params.dtm_path)
-        if filtered_dtm_path:
-            params.original_dtm_path = params.dtm_path
-            params.dtm_path = filtered_dtm_path
-
-        # 1. Optional pit filling
-        if params.fill_dtm:
-            self.log("Filling DTM depressions (pit removal)...")
-            with LargeFileRasterReader(params.dtm_path) as reader:
-                dem_arr = reader.read_array()
-                geotransform = reader.geotransform
-                projection = reader.projection
-                ndv = reader.nodata if reader.nodata is not None else -9999.0
-            filled_arr = fill_dem(dem_arr, nodata=ndv, log_func=self.log)
-            filled_path = params.dtm_path.parent / f"{params.dtm_path.stem}_filled.tif"
-            save_raster(filled_arr, filled_path, geotransform, projection, ndv)
-            params.dtm_path = filled_path
-            self.log(f"  Filled DTM saved to: {filled_path}")
-
-        # 2. Handle Sinks
-        sink_flag = 0
-        if params.sink_path:
-            self.log("Sinks detected, starting extraction...")
-            self.process_sinks(params.dtm_path, params.sink_path, params.cell_size)
-            if params.original_dtm_path is None:
-                params.original_dtm_path = params.dtm_path
-            params.dtm_path = params.dtm_path.parent / "sinked_dtm.tif"
-            sink_flag = 1
-
-        # 3. Handle Weight
-        if params.use_cavalli_weight:
-            self.log("Computing Cavalli weighting factor...")
-            weight_out = Path(params.weight_output_path) if params.weight_output_path else (params.dtm_path.parent / "weight.tif")
-            roughness_out = Path(params.roughness_path) if params.roughness_path else (params.dtm_path.parent / "roughness.tif")
-            params.weight_path = self.weight_calc.compute(
-                params.dtm_path, params.window_size,
-                weight_out, roughness_out,
-                params.normalize_weight, sink_flag,
-                n_workers=getattr(params, 'n_workers', None),
-                chunk_size=getattr(params, 'chunk_size', 1024)
-            )
-            params.roughness_path = roughness_out
-            params.weight_output_path = weight_out
+        self.log_history.clear()
+        t_start = time.time()
+        status = "COMPLETED"
+        error_detail = None
+        filtered_dtm_path = None
 
         try:
+            self.log("Starting process...")
+
+            # 0. Filter DTM (values < 0 or > 9000 to NoData)
+            self.log("Filtering DTM (masking values < 0 or > 9000)...")
+            filtered_dtm_path = self.filter_dtm(params.dtm_path)
+            if filtered_dtm_path:
+                params.original_dtm_path = params.dtm_path
+                params.dtm_path = filtered_dtm_path
+
+            # 1. Optional pit filling
+            if params.fill_dtm:
+                self.log("Filling DTM depressions (pit removal)...")
+                with LargeFileRasterReader(params.dtm_path) as reader:
+                    dem_arr = reader.read_array()
+                    geotransform = reader.geotransform
+                    projection = reader.projection
+                    ndv = reader.nodata if reader.nodata is not None else -9999.0
+                filled_arr = fill_dem(dem_arr, nodata=ndv, log_func=self.log)
+                filled_path = params.dtm_path.parent / f"{params.dtm_path.stem}_filled.tif"
+                save_raster(filled_arr, filled_path, geotransform, projection, ndv)
+                params.dtm_path = filled_path
+                self.log(f"  Filled DTM saved to: {filled_path}")
+
+            # 2. Handle Sinks
+            sink_flag = 0
+            if params.sink_path:
+                self.log("Sinks detected, starting extraction...")
+                self.process_sinks(params.dtm_path, params.sink_path, params.cell_size)
+                if params.original_dtm_path is None:
+                    params.original_dtm_path = params.dtm_path
+                params.dtm_path = params.dtm_path.parent / "sinked_dtm.tif"
+                sink_flag = 1
+
+            # 3. Handle Weight
+            if params.use_cavalli_weight:
+                self.log("Computing Cavalli weighting factor...")
+                weight_out = Path(params.weight_output_path) if params.weight_output_path else (params.dtm_path.parent / "weight.tif")
+                roughness_out = Path(params.roughness_path) if params.roughness_path else (params.dtm_path.parent / "roughness.tif")
+                params.weight_path = self.weight_calc.compute(
+                    params.dtm_path, params.window_size,
+                    weight_out, roughness_out,
+                    params.normalize_weight, sink_flag,
+                    n_workers=getattr(params, 'n_workers', None),
+                    chunk_size=getattr(params, 'chunk_size', 1024)
+                )
+                params.roughness_path = roughness_out
+                params.weight_output_path = weight_out
+
             # 4. Compute Connectivity
             if params.target_path:
                 self.log("Computing connectivity to TARGETS...")
@@ -102,7 +113,14 @@ class ConnectivityProcessor:
                 )
 
             self.log("Processing successfully completed!")
+        except Exception as e:
+            status = "FAILED"
+            import traceback
+            error_detail = traceback.format_exc()
+            raise e
         finally:
+            elapsed = time.time() - t_start
+            self._write_run_log(params, t_start, elapsed, status, error_detail)
             if filtered_dtm_path and filtered_dtm_path.exists():
                 try:
                     filtered_dtm_path.unlink(missing_ok=True)
@@ -111,6 +129,60 @@ class ConnectivityProcessor:
                     self.log(f"Warning: Could not remove filtered DTM: {e}")
             if params.original_dtm_path:
                 params.dtm_path = params.original_dtm_path
+
+    def _write_run_log(self, params: ProcessingParams, start_time: float, elapsed: float, status: str, error_msg: Optional[str] = None):
+        """Append a structured execution record to sedinconnect_runs.log"""
+        if not getattr(params, 'save_run_log', True):
+            return
+        try:
+            target_dir = None
+            if params.output_path:
+                try:
+                    target_dir = Path(params.output_path).parent
+                except Exception:
+                    pass
+            if not target_dir or not target_dir.exists():
+                if params.dtm_path:
+                    try:
+                        target_dir = Path(params.dtm_path).parent
+                    except Exception:
+                        pass
+            if not target_dir or not target_dir.exists():
+                target_dir = Path.cwd()
+
+            log_file = target_dir / "sedinconnect_runs.log"
+            now_str = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(start_time))
+
+            with open(log_file, "a", encoding="utf-8") as f:
+                f.write("=" * 80 + "\n")
+                f.write(f"[RUN LOG ENTRY] - {now_str}\n")
+                f.write(f"Software:        SedInConnect 3.2 (Morpheus PRIN 2023-2026 Project)\n")
+                f.write(f"Execution State: {status} (Elapsed Time: {elapsed:.2f} s)\n")
+                f.write("\n--- INPUTS & PARAMETERS ---\n")
+                f.write(f"DTM Raster:      {params.dtm_path}\n")
+                f.write(f"Cell Size:       {params.cell_size} m\n")
+                f.write(f"Target Feature:  {params.target_path if params.target_path else 'None (Catchment Outlet Mode)'}\n")
+                f.write(f"Sink Feature:    {params.sink_path if params.sink_path else 'None'}\n")
+                f.write(f"Weight Option:   {'Automatic Cavalli (2013) Roughness' if params.use_cavalli_weight else f'Custom Raster ({params.weight_path})'}\n")
+                f.write(f"Window Size:     {params.window_size}x{params.window_size} px\n")
+                f.write(f"Log-Normalize W: {params.normalize_weight}\n")
+                f.write(f"Fill DTM Pits:   {params.fill_dtm}\n")
+                f.write(f"CPU Workers:     {params.n_workers if params.n_workers else 'Auto'}\n")
+                f.write(f"Chunk Size:      {params.chunk_size} px\n")
+                f.write("\n--- OUTPUTS ---\n")
+                f.write(f"Connectivity IC: {params.output_path}\n")
+                if params.roughness_path: f.write(f"Roughness RI:    {params.roughness_path}\n")
+                if params.weight_output_path: f.write(f"Weight Factor W: {params.weight_output_path}\n")
+                if params.d_up_path: f.write(f"D_up Raster:     {params.d_up_path}\n")
+                if params.d_down_path: f.write(f"D_down Raster:   {params.d_down_path}\n")
+                if error_msg:
+                    f.write(f"\n--- ERROR DETAILS ---\n{error_msg}\n")
+                f.write("\n--- EXECUTION LOG ---\n")
+                for line in self.log_history:
+                    f.write(f"  {line}\n")
+                f.write("=" * 80 + "\n\n")
+        except Exception:
+            pass
 
     def filter_dtm(self, dtm_path: Path) -> Optional[Path]:
         """Set values < 0 and > 9000 to NoData and save to a temporary file"""
