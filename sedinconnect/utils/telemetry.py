@@ -17,6 +17,22 @@ MEASUREMENT_ID = "G-9047MQK3FC"
 API_SECRET = "WlQI-FJwQAiK0bssPyWmpA"
 GA_ENDPOINT = f"https://www.google-analytics.com/mp/collect?measurement_id={MEASUREMENT_ID}&api_secret={API_SECRET}"
 
+_cached_ip = None
+
+
+def _get_public_ip() -> str:
+    """Fetch public IP quietly in background (1.5s timeout, fail-safe)."""
+    global _cached_ip
+    if _cached_ip:
+        return _cached_ip
+    try:
+        req = urllib.request.Request("https://api.ipify.org", headers={"User-Agent": "SedInConnect/3.2"})
+        with urllib.request.urlopen(req, timeout=1.5) as resp:
+            _cached_ip = resp.read().decode("utf-8").strip()
+            return _cached_ip
+    except Exception:
+        return "unknown"
+
 
 def _get_anonymous_client_id() -> str:
     """Retrieve or generate a persistent anonymous UUID for client identification."""
@@ -72,6 +88,7 @@ def track_app_launch(mode: str = "GUI"):
                 "params": {
                     "version": "3.2",
                     "mode": mode,
+                    "client_ip": _get_public_ip(),
                     "os": platform.system(),
                     "os_version": platform.release(),
                     "engagement_time_msec": "100"
@@ -104,6 +121,7 @@ def track_analysis_run(
                 "params": {
                     "version": "3.2",
                     "mode": mode,
+                    "client_ip": _get_public_ip(),
                     "target_mode": target_mode,
                     "weight_mode": weight_mode,
                     "window_size": int(window_size),
