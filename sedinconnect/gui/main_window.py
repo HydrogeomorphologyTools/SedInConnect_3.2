@@ -1240,9 +1240,12 @@ adapted for mountain environments and high-resolution Digital Terrain Models (DT
 </ul>
 
 <hr style="border: 0; height: 1px; background: #ccc; margin: 20px 0;">
-<p style="text-align: center; color: #777; font-size: 9.5pt;">
+<p style="text-align: center; color: #777; font-size: 9.5pt; line-height: 1.5;">
 <b>SedInConnect 3.2</b> — Licensed under GNU General Public License v2 (GPLv2)<br>
-CNR-IRPI Padova (Italy) &nbsp;|&nbsp; MORPHEUS PRIN 2023-2026 Project
+CNR-IRPI Padova (Italy) &nbsp;|&nbsp; MORPHEUS PRIN 2023-2026 Project<br>
+<span style="font-size: 8.5pt; color: #888; font-style: italic;">
+This software transmits non-identifiable, anonymous usage statistics (such as application launches, general analysis parameters, and execution runtime) via secure HTTPS solely to monitor international scientific adoption and support research project reporting. No personal information, usernames, IP addresses, file paths, or dataset contents are ever collected.
+</span>
 </p>
 </div>
         """
