@@ -19,14 +19,24 @@ from sedinconnect.utils.params import ProcessingParams
 from sedinconnect.gui.dialogs import ResultPreviewDialog
 
 def resource_path(relative_path):
-    """ Get absolute path to resource, works for dev and for PyInstaller """
+    """ Get absolute path to resource, works for dev, package, and PyInstaller """
     try:
         if getattr(sys, 'frozen', False):
             base_path = Path(sys._MEIPASS)
-        else:
-            # Root is 2 levels up from sedinconnect/gui/
-            base_path = Path(__file__).resolve().parent.parent.parent
-            
+            p = base_path / relative_path
+            if p.exists():
+                return p
+            p_asset = base_path / "sedinconnect" / "assets" / relative_path
+            if p_asset.exists():
+                return p_asset
+
+        # Package assets directory (sedinconnect/assets/)
+        pkg_asset = Path(__file__).resolve().parent.parent / "assets" / relative_path
+        if pkg_asset.exists():
+            return pkg_asset
+
+        # Development root directory (2 levels up from sedinconnect/gui/)
+        base_path = Path(__file__).resolve().parent.parent.parent
         res_path = base_path / relative_path
         if res_path.exists():
             return res_path
