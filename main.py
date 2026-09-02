@@ -31,12 +31,6 @@ import multiprocessing
 import argparse
 from pathlib import Path
 
-try:
-    with open(os.path.join(os.path.dirname(sys.executable) if getattr(sys, 'frozen', False) else os.path.dirname(__file__), "startup.log"), "a", encoding="utf-8") as f:
-        f.write(f"Startup: argv={sys.argv}\n")
-except Exception:
-    pass
-
 from osgeo import gdal, ogr, osr, gdal_array
 
 gdal.UseExceptions()
@@ -135,17 +129,12 @@ def run_cli(args):
             d_down_path=Path(args.d_down) if args.d_down else None,
             fill_dtm=args.fill_dtm,
             n_workers=args.workers if hasattr(args, 'workers') else None,
-            chunk_size=args.chunk_size if hasattr(args, 'chunk_size') and args.chunk_size else 1024
+            chunk_size=args.chunk_size if hasattr(args, 'chunk_size') and args.chunk_size else 1024,
+            save_run_log=not args.no_run_log if hasattr(args, 'no_run_log') else True
         )
 
-    log_path = os.path.join(os.path.dirname(sys.executable) if getattr(sys, 'frozen', False) else os.path.dirname(__file__), "startup.log")
     def cli_logger(msg):
         print(msg)
-        try:
-            with open(log_path, "a", encoding="utf-8") as f:
-                f.write(f"{msg}\n")
-        except Exception:
-            pass
 
     processor = ConnectivityProcessor(cli_logger)
     try:
@@ -181,6 +170,8 @@ def main():
     parser.add_argument('--save-weight', type=str, metavar='PATH',
                         help='Save weight-factor (W) raster to PATH (*.tif). Requires --auto-weight.')
     parser.add_argument('--params', type=str, help='Path to a JSON parameters file')
+    parser.add_argument('--no-run-log', action='store_true',
+                        help='Disable appending execution record to sedinconnect_runs.log')
     parser.add_argument('--gui', action='store_true', default=None, help='Force GUI mode')
     parser.add_argument('--fill-dtm', action='store_true',
                         help='Fill DTM depressions (Priority-Flood algorithm) before computing flow directions.')
