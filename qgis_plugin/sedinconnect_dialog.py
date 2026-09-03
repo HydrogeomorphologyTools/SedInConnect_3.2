@@ -11,13 +11,31 @@ import threading
 import numpy as np
 from pathlib import Path
 
-from PyQt5.QtWidgets import (
+try:
+    from qgis.PyQt.QtWidgets import (
+except ImportError:
+    try:
+        from PyQt5.QtWidgets import (
+    except ImportError:
+        from PyQt6.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QGridLayout, QGroupBox,
     QLabel, QPushButton, QCheckBox, QSpinBox, QComboBox,
     QProgressBar, QTextEdit, QFileDialog, QMessageBox, QWidget
 )
-from PyQt5.QtCore import Qt, pyqtSignal, QObject
-from PyQt5.QtGui import QIcon, QFont, QColor
+try:
+    from qgis.PyQt.QtCore import Qt, pyqtSignal, QObject
+except ImportError:
+    try:
+        from PyQt5.QtCore import Qt, pyqtSignal, QObject
+    except ImportError:
+        from PyQt6.QtCore import Qt, pyqtSignal, QObject
+try:
+    from qgis.PyQt.QtGui import QIcon, QFont, QColor
+except ImportError:
+    try:
+        from PyQt5.QtGui import QIcon, QFont, QColor
+    except ImportError:
+        from PyQt6.QtGui import QIcon, QFont, QColor
 
 from qgis.core import (
     QgsProject, QgsMapLayerProxyModel, QgsRasterLayer,

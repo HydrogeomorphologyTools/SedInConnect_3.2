@@ -1,10 +1,28 @@
 import os
 import numpy as np
 from pathlib import Path
-from PyQt5 import QtWidgets, QtCore, QtGui
-from PyQt5.QtWidgets import (QVBoxLayout, QHBoxLayout, QLabel, QPushButton, 
+try:
+    from qgis.PyQt import QtWidgets, QtCore, QtGui
+except ImportError:
+    try:
+        from PyQt5 import QtWidgets, QtCore, QtGui
+    except ImportError:
+        from PyQt6 import QtWidgets, QtCore, QtGui
+try:
+    from qgis.PyQt.QtWidgets import
+except ImportError:
+    try:
+        from PyQt5.QtWidgets import
+    except ImportError:
+        from PyQt6.QtWidgets import (QVBoxLayout, QHBoxLayout, QLabel, QPushButton, 
                              QMessageBox, QWidget, QFileDialog)
-from PyQt5.QtCore import Qt
+try:
+    from qgis.PyQt.QtCore import
+except ImportError:
+    try:
+        from PyQt5.QtCore import
+    except ImportError:
+        from PyQt6.QtCore import Qt
 
 from sedinconnect.utils.raster import LargeFileRasterReader
 

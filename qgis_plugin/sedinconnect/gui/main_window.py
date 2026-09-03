@@ -5,14 +5,38 @@ import time
 from datetime import datetime
 from pathlib import Path
 from typing import Optional
-from PyQt5 import QtWidgets, QtCore, QtGui
-from PyQt5.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, 
+try:
+    from qgis.PyQt import QtWidgets, QtCore, QtGui
+except ImportError:
+    try:
+        from PyQt5 import QtWidgets, QtCore, QtGui
+    except ImportError:
+        from PyQt6 import QtWidgets, QtCore, QtGui
+try:
+    from qgis.PyQt.QtWidgets import
+except ImportError:
+    try:
+        from PyQt5.QtWidgets import
+    except ImportError:
+        from PyQt6.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, 
                              QLabel, QLineEdit, QPushButton, QFileDialog, 
                              QProgressBar, QTextEdit, QFrame, QCheckBox, 
                              QSpinBox, QComboBox, QGroupBox, QMessageBox, QSplitter,
                              QScrollArea, QGridLayout, QApplication)
-from PyQt5.QtCore import Qt, QThread, pyqtSignal
-from PyQt5.QtGui import QFont, QPixmap, QPalette, QBrush, QTextCursor
+try:
+    from qgis.PyQt.QtCore import
+except ImportError:
+    try:
+        from PyQt5.QtCore import
+    except ImportError:
+        from PyQt6.QtCore import Qt, QThread, pyqtSignal
+try:
+    from qgis.PyQt.QtGui import
+except ImportError:
+    try:
+        from PyQt5.QtGui import
+    except ImportError:
+        from PyQt6.QtGui import QFont, QPixmap, QPalette, QBrush, QTextCursor
 
 from sedinconnect.core.processor import ConnectivityProcessor
 from sedinconnect.utils.params import ProcessingParams

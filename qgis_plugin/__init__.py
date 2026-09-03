@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 SedInConnect QGIS Plugin entry point.
-Includes automatic dependency verification and auto-installer for any missing Python packages.
+Cross-platform and Qt5/Qt6 version-independent via qgis.PyQt.
 """
 
 import sys
@@ -9,7 +9,7 @@ import subprocess
 
 
 def ensure_dependencies():
-    """Check required packages (numba, numpy, scipy, matplotlib) and prompt auto-install if missing."""
+    """Check required scientific packages (numba, numpy, scipy, matplotlib) and auto-install if missing."""
     missing = []
     for pkg in ["numba", "numpy", "scipy", "matplotlib"]:
         try:
@@ -18,7 +18,14 @@ def ensure_dependencies():
             missing.append(pkg)
 
     if missing:
-        from PyQt5.QtWidgets import QMessageBox
+        try:
+            from qgis.PyQt.QtWidgets import QMessageBox
+        except ImportError:
+            try:
+                from PyQt5.QtWidgets import QMessageBox
+            except ImportError:
+                from PyQt6.QtWidgets import QMessageBox
+
         res = QMessageBox.question(
             None,
             "SedInConnect — Dependency Setup",

@@ -2,12 +2,21 @@
 """
 Main QGIS Plugin class for SedInConnect.
 Manages toolbar actions, menus, and Processing provider registration.
+Cross-platform Qt5/Qt6 compatible.
 """
 
 import os
 from qgis.core import QgsApplication
-from PyQt5.QtWidgets import QAction
-from PyQt5.QtGui import QIcon
+
+try:
+    from qgis.PyQt.QtWidgets import QAction
+    from qgis.PyQt.QtGui import QIcon
+except ImportError:
+    try:
+        from PyQt5.QtWidgets import QAction
+        from PyQt5.QtGui import QIcon
+    except ImportError:
+        from PyQt6.QtGui import QAction, QIcon
 
 from .sedinconnect_provider import SedInConnectProvider
 from .sedinconnect_dialog import SedInConnectDialog

@@ -24,7 +24,13 @@ from qgis.core import (
     QgsProcessingOutputRasterLayer,
     QgsProcessingException
 )
-from PyQt5.QtGui import QIcon
+try:
+    from qgis.PyQt.QtGui import QIcon
+except ImportError:
+    try:
+        from PyQt5.QtGui import QIcon
+    except ImportError:
+        from PyQt6.QtGui import QIcon
 
 from .sedinconnect.utils.params import ProcessingParams
 from .sedinconnect.core.processor import ConnectivityProcessor
