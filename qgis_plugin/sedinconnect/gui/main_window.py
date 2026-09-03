@@ -129,7 +129,7 @@ class ModernConnectivityGUI(QMainWindow):
             palette = QPalette()
             pixmap = QPixmap(str(bg_image_path))
             self._bg_pixmap = pixmap
-            scaled_pixmap = pixmap.scaled(self.size(), Qt.KeepAspectRatioByExpanding, Qt.SmoothTransformation)
+            scaled_pixmap = pixmap.scaled(self.size(), Qt_KeepAspectRatioByExpanding, Qt_SmoothTransformation)
             palette.setBrush(QPalette.Window, QBrush(scaled_pixmap))
             central_widget.setAutoFillBackground(True)
             central_widget.setPalette(palette)
@@ -156,12 +156,12 @@ class ModernConnectivityGUI(QMainWindow):
 
         title = QLabel("SedInConnect 3.2")
         title.setFont(QFont("Arial", 24, QFont.Bold))
-        title.setAlignment(Qt.AlignCenter)
+        title.setAlignment(Qt_AlignCenter)
         content_layout.addWidget(title)
 
         subtitle = QLabel("Sediment Connectivity Index Calculation (Cavalli et al., 2013)")
         subtitle.setFont(QFont("Arial", 11))
-        subtitle.setAlignment(Qt.AlignCenter)
+        subtitle.setAlignment(Qt_AlignCenter)
         subtitle.setStyleSheet("color: #666; margin-bottom: 10px;")
         content_layout.addWidget(subtitle)
 
@@ -278,7 +278,7 @@ class ModernConnectivityGUI(QMainWindow):
         
         console_title = QLabel("Processing Console")
         console_title.setStyleSheet("color: white; font-weight: bold; font-size: 14px; margin-top: 5px; background: transparent; border: none;")
-        console_title.setAlignment(Qt.AlignCenter)
+        console_title.setAlignment(Qt_AlignCenter)
         console_pane_layout.addWidget(console_title)
 
         self.console = QTextEdit()
@@ -335,9 +335,9 @@ Ready to start processing...
         if logo_path.exists():
             logo_label = QLabel()
             pixmap = QtGui.QPixmap(str(logo_path))
-            scaled_pixmap = pixmap.scaled(311, 203, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+            scaled_pixmap = pixmap.scaled(311, 203, Qt_KeepAspectRatio, Qt_SmoothTransformation)
             logo_label.setPixmap(scaled_pixmap)
-            logo_label.setAlignment(Qt.AlignCenter)
+            logo_label.setAlignment(Qt_AlignCenter)
             layout.addWidget(logo_label)
         else:
             self._add_logo_placeholder(layout)
@@ -367,15 +367,15 @@ Ready to start processing...
         layout.addWidget(description_scroll)
 
         cnr_label = QLabel("<b>CNR-IRPI</b><br>Padova, Italy")
-        cnr_label.setAlignment(Qt.AlignCenter)
+        cnr_label.setAlignment(Qt_AlignCenter)
         layout.addWidget(cnr_label)
 
         logo2_path = resource_path("logo2.png")
         if logo2_path.exists():
             logo2_label = QLabel()
-            pixmap2 = QtGui.QPixmap(str(logo2_path)).scaled(276, 120, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+            pixmap2 = QtGui.QPixmap(str(logo2_path)).scaled(276, 120, Qt_KeepAspectRatio, Qt_SmoothTransformation)
             logo2_label.setPixmap(pixmap2)
-            logo2_label.setAlignment(Qt.AlignCenter)
+            logo2_label.setAlignment(Qt_AlignCenter)
             layout.addWidget(logo2_label)
 
         help_button = QPushButton("? Help & Documentation")
@@ -399,14 +399,14 @@ Ready to start processing...
         layout.addStretch()
 
         version_label = QLabel("<b>Version 3.2 (2026)</b><br>Stefano Crema<br>Marco Cavalli")
-        version_label.setAlignment(Qt.AlignCenter)
+        version_label.setAlignment(Qt_AlignCenter)
         layout.addWidget(version_label)
         return sidebar
 
     def _add_logo_placeholder(self, layout):
         l = QLabel("MORPHEUS\nPRIN 2023-2026")
         l.setFont(QFont("Arial", 18, QFont.Bold))
-        l.setAlignment(Qt.AlignCenter)
+        l.setAlignment(Qt_AlignCenter)
         l.setStyleSheet("color: #2196F3; padding: 20px;")
         layout.addWidget(l)
 
@@ -748,17 +748,17 @@ Ready to start processing...
         if filename: line_edit.setText(filename)
 
     def toggle_targets(self, state):
-        enabled = state == Qt.Checked
+        enabled = state in (Qt_Checked, 2)
         self.target_input.setEnabled(enabled)
         self.target_button.setEnabled(enabled)
 
     def toggle_sinks(self, state):
-        enabled = state == Qt.Checked
+        enabled = state in (Qt_Checked, 2)
         self.sink_input.setEnabled(enabled)
         self.sink_button.setEnabled(enabled)
 
     def toggle_save_components(self, state):
-        enabled = state == Qt.Checked
+        enabled = state in (Qt_Checked, 2)
         if hasattr(self, 'dup_output_input'):
             self.dup_output_input.setEnabled(enabled)
             self.dup_output_button.setEnabled(enabled)
@@ -766,7 +766,7 @@ Ready to start processing...
             self.ddown_output_button.setEnabled(enabled)
 
     def toggle_auto_weight(self, state):
-        enabled = state == Qt.Checked
+        enabled = state in (Qt_Checked, 2)
         self.weight_input.setEnabled(not enabled)
         if hasattr(self, 'weight_button'):
             self.weight_button.setEnabled(not enabled)
@@ -1041,7 +1041,7 @@ Ready to start processing...
 
         help_label = QLabel()
         help_label.setWordWrap(True)
-        help_label.setTextFormat(Qt.RichText)
+        help_label.setTextFormat(Qt_RichText)
         help_label.setOpenExternalLinks(True)
         
         help_text_1 = """
@@ -1094,14 +1094,14 @@ adapted for mountain environments and high-resolution Digital Terrain Models (DT
         if diagram_path.exists():
             diagram_label = QLabel()
             pixmap = QtGui.QPixmap(str(diagram_path))
-            diagram_label.setPixmap(pixmap.scaledToWidth(520, Qt.SmoothTransformation))
-            diagram_label.setAlignment(Qt.AlignCenter)
+            diagram_label.setPixmap(pixmap.scaledToWidth(520, Qt_SmoothTransformation))
+            diagram_label.setAlignment(Qt_AlignCenter)
             diagram_label.setStyleSheet("margin: 10px 0; padding: 5px; background: white; border: 1px solid #ddd; border-radius: 6px;")
             content_layout.addWidget(diagram_label)
 
         help_label2 = QLabel()
         help_label2.setWordWrap(True)
-        help_label2.setTextFormat(Qt.RichText)
+        help_label2.setTextFormat(Qt_RichText)
         help_label2.setOpenExternalLinks(True)
         
         help_text_2 = """
@@ -1295,14 +1295,14 @@ This software transmits non-identifiable, anonymous usage statistics (such as ap
         close_btn = QPushButton("Close")
         close_btn.setStyleSheet("padding: 8px 24px; background-color: #4CAF50; color: white; font-weight: bold; border-radius: 4px; font-size: 11pt;")
         close_btn.clicked.connect(help_dialog.accept)
-        main_layout.addWidget(close_btn, alignment=Qt.AlignCenter)
+        main_layout.addWidget(close_btn, alignment=Qt_AlignCenter)
         help_dialog.exec_()
 
     def resizeEvent(self, event):
         if hasattr(self, '_bg_pixmap'):
             central_widget = self.centralWidget()
             palette = central_widget.palette()
-            scaled_pixmap = self._bg_pixmap.scaled(self.size(), Qt.KeepAspectRatioByExpanding, Qt.SmoothTransformation)
+            scaled_pixmap = self._bg_pixmap.scaled(self.size(), Qt_KeepAspectRatioByExpanding, Qt_SmoothTransformation)
             palette.setBrush(QPalette.Window, QBrush(scaled_pixmap))
             central_widget.setPalette(palette)
         super().resizeEvent(event)

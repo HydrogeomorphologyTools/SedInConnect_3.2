@@ -44,9 +44,10 @@ except ImportError:
         )
 
 # Safe enum resolution across Qt5 and Qt6
-Qt_AlignCenter = getattr(Qt, "AlignCenter", None)
-if Qt_AlignCenter is None:
-    Qt_AlignCenter = getattr(Qt.AlignmentFlag, "AlignCenter")
+Qt_AlignCenter = getattr(Qt, "AlignCenter", None) or getattr(getattr(Qt, "AlignmentFlag", None), "AlignCenter", 0x84)
+Qt_AlignVCenter = getattr(Qt, "AlignVCenter", None) or getattr(getattr(Qt, "AlignmentFlag", None), "AlignVCenter", 0x80)
+Qt_KeepAspectRatio = getattr(Qt, "KeepAspectRatio", None) or getattr(getattr(Qt, "AspectRatioMode", None), "KeepAspectRatio", 1)
+Qt_SmoothTransformation = getattr(Qt, "SmoothTransformation", None) or getattr(getattr(Qt, "TransformationMode", None), "SmoothTransformation", 1)
 
 from qgis.core import (
     QgsProject, QgsMapLayerProxyModel, QgsRasterLayer,
@@ -176,7 +177,7 @@ class SedInConnectDialog(QDialog):
         if not os.path.exists(logo_path):
             logo_path = os.path.join(os.path.dirname(__file__), 'logo2.png')
         if os.path.exists(logo_path):
-            pix = QPixmap(logo_path).scaled(56, 56, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+            pix = QPixmap(logo_path).scaled(56, 56, Qt_KeepAspectRatio, Qt_SmoothTransformation)
             logo_label.setPixmap(pix)
         h_layout.addWidget(logo_label)
 
@@ -189,7 +190,7 @@ class SedInConnectDialog(QDialog):
             "<span style='color:#D32F2F; font-weight:bold;'>[TESTING / PREVIEW VERSION — Feedback Welcome]</span>"
             "</p>"
         )
-        title_text.setAlignment(Qt.AlignVCenter)
+        title_text.setAlignment(Qt_AlignVCenter)
         h_layout.addWidget(title_text, stretch=1)
         main_layout.addWidget(header_frame)
 
