@@ -1,8 +1,15 @@
 # -*- coding: utf-8 -*-
 """
 SedInConnect 3.2 — ArcGIS Pro Python Toolbox (.pyt)
-Provides native high-performance Sediment Connectivity Index (IC) assessment in ArcGIS Pro.
-Developed at CNR-IRPI Padova (Italy) within the MORPHEUS PRIN 2023-2026 Project.
+Stand-alone Sediment Connectivity Assessment in River Catchments.
+
+Developed at:
+CNR-IRPI Padova (National Research Council - Research Institute for Geo-Hydrological Protection)
+Within the research activities of:
+MORPHEUS - GeoMORPHomEtry throUgh Scales for a resilient landscape (PRIN 2022 / 2023-2026, Prot. 2022JEFZRM)
+Funded by European Union - NextGenerationEU, MUR and Italia Domani (PNRR).
+
+[TESTING / PREVIEW VERSION]
 """
 
 import os
@@ -29,6 +36,10 @@ class Toolbox(object):
     def __init__(self):
         self.label = "SedInConnect 3.2"
         self.alias = "sedinconnect"
+        self.description = (
+            "SedInConnect 3.2: Stand-alone Sediment Connectivity Assessment Tool. "
+            "MORPHEUS PRIN 2023-2026 Project (CNR-IRPI Padova). [TESTING / PREVIEW]"
+        )
         self.tools = [CalculateSedimentConnectivity]
 
 
@@ -36,149 +47,204 @@ class CalculateSedimentConnectivity(object):
     def __init__(self):
         self.label = "Calculate Sediment Connectivity Index (IC)"
         self.description = (
-            "Calculates the Index of Connectivity (IC) (Cavalli et al., 2013; Borselli et al., 2008) "
-            "using high-performance native Python/Numba algorithms."
+            "Calculates the Index of Sediment Connectivity (IC) (Cavalli et al., 2013; Borselli et al., 2008) "
+            "using high-performance native 64-bit Python/Numba algorithms.\n\n"
+            "Developed at CNR-IRPI Padova within the MORPHEUS PRIN 2023-2026 project.\n"
+            "Note: This tool is currently in Testing/Preview phase."
         )
         self.canRunInBackground = True
 
     def getParameterInfo(self):
-        """Define parameter definitions for ArcGIS Pro geoprocessing tool."""
+        """Define parameter definitions organized in clear categories for ArcGIS Pro."""
 
-        # Param 0: DTM Raster (Required)
+        # -----------------------------------------------------------
+        # CATEGORY 1: Input Datasets
+        # -----------------------------------------------------------
         p_dtm = arcpy.Parameter(
             displayName="Input Digital Terrain Model (DTM)",
             name="in_dtm",
             datatype="GPRasterLayer",
             parameterType="Required",
-            direction="Input"
+            direction="Input",
+            category="1. Input Datasets"
         )
+        p_dtm.description = "Hydrologically conditioned or raw elevation raster (DTM/DEM)."
 
-        # Param 1: Target Features (Optional)
         p_target = arcpy.Parameter(
-            displayName="Target Features (Streams, Sinks, Reservoirs) [Optional]",
+            displayName="Target Features (Streams, Lakes, Reservoirs) [Optional]",
             name="in_target",
             datatype="GPFeatureLayer",
             parameterType="Optional",
-            direction="Input"
+            direction="Input",
+            category="1. Input Datasets"
+        )
+        p_target.description = (
+            "Vector features representing targets of connectivity (e.g. stream network polyline/polygon, "
+            "reservoir perimeter, lake outlet, dam). If omitted, connectivity to the entire catchment outlet is computed."
         )
 
-        # Param 2: Sink Features (Optional)
         p_sink = arcpy.Parameter(
             displayName="Sink Features (Depressions, Retention Basins) [Optional]",
             name="in_sink",
             datatype="GPFeatureLayer",
             parameterType="Optional",
-            direction="Input"
+            direction="Input",
+            category="1. Input Datasets"
+        )
+        p_sink.description = (
+            "Vector polygon features representing internal sinks, retention basins, or mining pits where "
+            "sediment transport is intercepted and trapped."
         )
 
-        # Param 3: Automatic Cavalli Roughness Weight (Boolean)
+        # -----------------------------------------------------------
+        # CATEGORY 2: Weighting Factor & Roughness
+        # -----------------------------------------------------------
         p_auto_weight = arcpy.Parameter(
             displayName="Compute Automatic Weighting Factor (Cavalli Roughness)",
             name="use_auto_weight",
             datatype="GPBoolean",
             parameterType="Optional",
-            direction="Input"
+            direction="Input",
+            category="2. Weighting Factor & Roughness"
+        )
+        p_auto_weight.description = (
+            "If checked, calculates the impedance weight factor (W) automatically from high-resolution DTM "
+            "surface roughness (moving standard deviation of residual topography, Cavalli et al., 2013)."
         )
         p_auto_weight.value = True
 
-        # Param 4: Window Size (Long, 3..35)
         p_window_size = arcpy.Parameter(
-            displayName="Roughness Window Size (pixels, odd integer 3..35)",
+            displayName="Roughness Window Size (pixels)",
             name="window_size",
             datatype="GPLong",
             parameterType="Optional",
-            direction="Input"
+            direction="Input",
+            category="2. Weighting Factor & Roughness"
         )
+        p_window_size.description = (
+            "Moving window kernel size in pixels for standard deviation of residual topography. "
+            "Must be an odd integer (3, 5, 7, 9... up to 35). Default: 3 (representing 3x3 pixels)."
+        )
+        p_window_size.filter.type = "ValueList"
+        p_window_size.filter.list = [3, 5, 7, 9, 11, 13, 15, 17, 19, 21, 23, 25, 27, 29, 31, 33, 35]
         p_window_size.value = 3
 
-        # Param 5: Normalize Weight (Boolean)
         p_normalize = arcpy.Parameter(
-            displayName="Log-Normalize Weighting Factor (Recommended for window size > 5)",
+            displayName="Log-Normalize Weighting Factor",
             name="normalize_weight",
             datatype="GPBoolean",
             parameterType="Optional",
-            direction="Input"
+            direction="Input",
+            category="2. Weighting Factor & Roughness"
+        )
+        p_normalize.description = (
+            "Applies natural logarithmic normalization to the Cavalli roughness weight factor. "
+            "Recommended when using larger window sizes (window size > 5)."
         )
         p_normalize.value = False
 
-        # Param 6: Custom User Weight Raster (Optional)
         p_custom_weight = arcpy.Parameter(
-            displayName="Custom User Weight Raster [Optional, if auto-weight disabled]",
+            displayName="Custom User Weight Raster [Optional]",
             name="in_custom_weight",
             datatype="GPRasterLayer",
             parameterType="Optional",
-            direction="Input"
+            direction="Input",
+            category="2. Weighting Factor & Roughness"
+        )
+        p_custom_weight.description = (
+            "Custom impedance/weight raster (e.g. Manning roughness, land cover C-factor, RUSLE C/P factors). "
+            "Used only when Automatic Weighting Factor is unchecked."
         )
 
-        # Param 7: Fill DTM Depressions (Boolean)
+        # -----------------------------------------------------------
+        # CATEGORY 3: Pre-processing & Pit Filling
+        # -----------------------------------------------------------
         p_fill_dtm = arcpy.Parameter(
             displayName="Fill DTM Depressions (Priority-Flood Pit Removal)",
             name="fill_dtm",
             datatype="GPBoolean",
             parameterType="Optional",
-            direction="Input"
+            direction="Input",
+            category="3. Pre-processing & Conditioning"
+        )
+        p_fill_dtm.description = (
+            "Executes pure native Priority-Flood depression filling on the DTM prior to flow routing. "
+            "Useful if the input DTM has not been pit-filled."
         )
         p_fill_dtm.value = False
 
-        # Param 8: Save Intermediate Components (Boolean)
+        # -----------------------------------------------------------
+        # CATEGORY 4: Primary & Intermediate Outputs
+        # -----------------------------------------------------------
+        p_out_ic = arcpy.Parameter(
+            displayName="Output Connectivity Index (IC) Raster",
+            name="out_ic",
+            datatype="DERasterDataset",
+            parameterType="Required",
+            direction="Output",
+            category="4. Output Datasets"
+        )
+        p_out_ic.description = "Primary output GeoTIFF raster of the dimensionless Index of Connectivity (IC)."
+
         p_save_comp = arcpy.Parameter(
             displayName="Save Intermediate Components (D_up, D_down, Roughness, Weight)",
             name="save_components",
             datatype="GPBoolean",
             parameterType="Optional",
-            direction="Input"
+            direction="Input",
+            category="4. Output Datasets"
+        )
+        p_save_comp.description = (
+            "If enabled, also exports intermediate calculation rasters (Upslope Component D_up, "
+            "Downslope Component D_down, Surface Roughness RI, and Weight Factor W)."
         )
         p_save_comp.value = False
 
-        # Param 9: Output IC Raster (Required)
-        p_out_ic = arcpy.Parameter(
-            displayName="Output Connectivity Index (IC)",
-            name="out_ic",
-            datatype="DERasterDataset",
-            parameterType="Required",
-            direction="Output"
-        )
-
-        # Param 10: Output Roughness Raster (Optional)
         p_out_roughness = arcpy.Parameter(
             displayName="Output Surface Roughness Raster [Optional]",
             name="out_roughness",
             datatype="DERasterDataset",
             parameterType="Optional",
-            direction="Output"
+            direction="Output",
+            category="4. Output Datasets"
         )
+        p_out_roughness.description = "Output GeoTIFF raster for surface roughness index (RI)."
 
-        # Param 11: Output Weight Raster (Optional)
         p_out_weight = arcpy.Parameter(
             displayName="Output Weight Factor Raster [Optional]",
             name="out_weight",
             datatype="DERasterDataset",
             parameterType="Optional",
-            direction="Output"
+            direction="Output",
+            category="4. Output Datasets"
         )
+        p_out_weight.description = "Output GeoTIFF raster for the computed weight factor (W)."
 
-        # Param 12: Output D_up Raster (Optional)
         p_out_dup = arcpy.Parameter(
             displayName="Output Upslope Component (D_up) [Optional]",
             name="out_dup",
             datatype="DERasterDataset",
             parameterType="Optional",
-            direction="Output"
+            direction="Output",
+            category="4. Output Datasets"
         )
+        p_out_dup.description = "Output GeoTIFF raster for upslope sediment potential component (D_up)."
 
-        # Param 13: Output D_down Raster (Optional)
         p_out_ddown = arcpy.Parameter(
             displayName="Output Downslope Component (D_down) [Optional]",
             name="out_ddown",
             datatype="DERasterDataset",
             parameterType="Optional",
-            direction="Output"
+            direction="Output",
+            category="4. Output Datasets"
         )
+        p_out_ddown.description = "Output GeoTIFF raster for downslope flow path length component (D_down)."
 
         return [
-            p_dtm, p_target, p_sink, p_auto_weight, p_window_size,
-            p_normalize, p_custom_weight, p_fill_dtm, p_save_comp,
-            p_out_ic, p_out_roughness, p_out_weight, p_out_dup, p_out_ddown
+            p_dtm, p_target, p_sink,
+            p_auto_weight, p_window_size, p_normalize, p_custom_weight,
+            p_fill_dtm,
+            p_out_ic, p_save_comp, p_out_roughness, p_out_weight, p_out_dup, p_out_ddown
         ]
 
     def isLicensed(self):
@@ -186,7 +252,7 @@ class CalculateSedimentConnectivity(object):
         return True
 
     def updateParameters(self, parameters):
-        """Update GUI parameter visibility."""
+        """Dynamically enable or disable controls based on user choices."""
         use_auto = parameters[3].value
         if use_auto:
             parameters[4].enabled = True
@@ -203,7 +269,7 @@ class CalculateSedimentConnectivity(object):
         window_size = parameters[4].value
         if window_size is not None:
             if window_size < 3 or window_size > 35 or (window_size % 2 == 0):
-                parameters[4].setErrorMessage("Window size must be an odd integer between 3 and 35.")
+                parameters[4].setErrorMessage("Window size must be an odd integer between 3 and 35 (e.g., 3, 5, 7, 9...).")
         return
 
     def execute(self, parameters, messages):
@@ -222,9 +288,9 @@ class CalculateSedimentConnectivity(object):
         normalize_weight = bool(parameters[5].value)
         custom_weight_val = parameters[6].valueAsText
         fill_dtm = bool(parameters[7].value)
-        save_components = bool(parameters[8].value)
+        out_ic_val = parameters[8].valueAsText
+        save_components = bool(parameters[9].value)
 
-        out_ic_val = parameters[9].valueAsText
         out_roughness_val = parameters[10].valueAsText
         out_weight_val = parameters[11].valueAsText
         out_dup_val = parameters[12].valueAsText
@@ -249,17 +315,21 @@ class CalculateSedimentConnectivity(object):
         except Exception:
             cell_size = 0.0
 
-        messages.addMessage("------------------------------------------------------------")
-        messages.addMessage("SedInConnect 3.2 — Stand-alone Sediment Connectivity Assessment")
-        messages.addMessage("MORPHEUS PRIN 2023-2026 Project | CNR-IRPI Padova (Italy)")
-        messages.addMessage("------------------------------------------------------------")
-        messages.addMessage(f"Input DTM: {dtm_path}")
-        messages.addMessage(f"Output IC: {out_ic_path}")
+        messages.addMessage("============================================================")
+        messages.addMessage("SedInConnect 3.2 — Stand-alone Sediment Connectivity Tool")
+        messages.addMessage("CNR-IRPI Padova | MORPHEUS PRIN 2023-2026 Project")
+        messages.addMessage("Status: [PREVIEW / TESTING RELEASE]")
+        messages.addMessage("============================================================")
+        messages.addMessage(f"Input DTM:        {dtm_path}")
+        messages.addMessage(f"Output IC:       {out_ic_path}")
         if target_path:
             messages.addMessage(f"Target Features: {target_path}")
         if sink_path:
-            messages.addMessage(f"Sink Features: {sink_path}")
-        messages.addMessage(f"Roughness Window Size: {window_size}x{window_size} px")
+            messages.addMessage(f"Sink Features:   {sink_path}")
+        messages.addMessage(f"Roughness Window: {window_size}x{window_size} pixels")
+        messages.addMessage(f"Normalized W:    {normalize_weight}")
+        messages.addMessage(f"Fill Pits:       {fill_dtm}")
+        messages.addMessage("------------------------------------------------------------")
 
         params = ProcessingParams(
             dtm_path=dtm_path,
@@ -287,6 +357,7 @@ class CalculateSedimentConnectivity(object):
         processor = ConnectivityProcessor(log_func=log_to_arcgis)
         processor.process(params)
 
-        messages.addMessage("------------------------------------------------------------")
-        messages.addMessage(f"Calculation successfully completed! Output saved to:\n{out_ic_path}")
-        messages.addMessage("------------------------------------------------------------")
+        messages.addMessage("============================================================")
+        messages.addMessage(f"SedInConnect IC calculation finished successfully!")
+        messages.addMessage(f"Result file: {out_ic_path}")
+        messages.addMessage("============================================================")

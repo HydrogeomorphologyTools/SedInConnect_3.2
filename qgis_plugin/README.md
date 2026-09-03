@@ -4,6 +4,9 @@ Official **QGIS Plugin and Processing Toolbox Provider** for stand-alone and nat
 
 Developed at **CNR-IRPI Padova (Italy)** within the **MORPHEUS PRIN 2023-2026 Project**.
 
+> [!NOTE]
+> **Status:** This QGIS Plugin & Processing Toolbox distribution is currently in **Beta / Testing Phase (Preview)**. Please test and report any feedback or suggestions!
+
 ---
 
 ## 🌟 Key Features in QGIS

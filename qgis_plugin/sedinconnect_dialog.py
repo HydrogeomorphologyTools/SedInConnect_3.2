@@ -3,6 +3,9 @@
 Dedicated PyQt Dialog for SedInConnect in QGIS.
 Features QGIS MapLayer combo boxes, live progress, ArcGIS Cold-to-Hot Stretched colormap styling,
 and interactive results preview window. Cross-platform Qt5/Qt6 compatible.
+
+Developed at CNR-IRPI Padova within the MORPHEUS PRIN 2023-2026 Project.
+[TESTING / PREVIEW VERSION]
 """
 
 import os
@@ -14,30 +17,30 @@ from pathlib import Path
 try:
     from qgis.PyQt import QtCore, QtGui, QtWidgets
     from qgis.PyQt.QtCore import Qt, pyqtSignal, QObject
-    from qgis.PyQt.QtGui import QIcon, QFont, QColor
+    from qgis.PyQt.QtGui import QIcon, QFont, QColor, QPixmap
     from qgis.PyQt.QtWidgets import (
         QDialog, QVBoxLayout, QHBoxLayout, QGridLayout, QGroupBox,
         QLabel, QPushButton, QCheckBox, QSpinBox, QComboBox,
-        QProgressBar, QTextEdit, QFileDialog, QMessageBox, QWidget
+        QProgressBar, QTextEdit, QFileDialog, QMessageBox, QWidget, QFrame
     )
 except ImportError:
     try:
         from PyQt5 import QtCore, QtGui, QtWidgets
         from PyQt5.QtCore import Qt, pyqtSignal, QObject
-        from PyQt5.QtGui import QIcon, QFont, QColor
+        from PyQt5.QtGui import QIcon, QFont, QColor, QPixmap
         from PyQt5.QtWidgets import (
             QDialog, QVBoxLayout, QHBoxLayout, QGridLayout, QGroupBox,
             QLabel, QPushButton, QCheckBox, QSpinBox, QComboBox,
-            QProgressBar, QTextEdit, QFileDialog, QMessageBox, QWidget
+            QProgressBar, QTextEdit, QFileDialog, QMessageBox, QWidget, QFrame
         )
     except ImportError:
         from PyQt6 import QtCore, QtGui, QtWidgets
         from PyQt6.QtCore import Qt, pyqtSignal, QObject
-        from PyQt6.QtGui import QIcon, QFont, QColor
+        from PyQt6.QtGui import QIcon, QFont, QColor, QPixmap
         from PyQt6.QtWidgets import (
             QDialog, QVBoxLayout, QHBoxLayout, QGridLayout, QGroupBox,
             QLabel, QPushButton, QCheckBox, QSpinBox, QComboBox,
-            QProgressBar, QTextEdit, QFileDialog, QMessageBox, QWidget
+            QProgressBar, QTextEdit, QFileDialog, QMessageBox, QWidget, QFrame
         )
 
 # Safe enum resolution across Qt5 and Qt6
@@ -155,8 +158,8 @@ class SedInConnectDialog(QDialog):
     def __init__(self, iface, parent=None):
         super().__init__(parent)
         self.iface = iface
-        self.setWindowTitle("SedInConnect 3.2 — Sediment Connectivity Assessment")
-        self.resize(780, 720)
+        self.setWindowTitle("SedInConnect 3.2 — Sediment Connectivity Assessment [TESTING RELEASE]")
+        self.resize(820, 780)
 
         icon_path = os.path.join(os.path.dirname(__file__), 'icon.png')
         if not os.path.exists(icon_path):
@@ -173,59 +176,90 @@ class SedInConnectDialog(QDialog):
     def init_ui(self):
         main_layout = QVBoxLayout(self)
 
-        # Title Header
-        header = QLabel("<h2>SedInConnect 3.2</h2><p style='color: #444;'>Stand-alone Sediment Connectivity Assessment (MORPHEUS PRIN 2023-2026)</p>")
-        header.setAlignment(Qt_AlignCenter)
-        main_layout.addWidget(header)
+        # Header Box with Logo and Project Information
+        header_frame = QFrame()
+        header_frame.setStyleSheet("background-color: #F8F9FA; border: 1px solid #DEE2E6; border-radius: 6px; padding: 6px;")
+        h_layout = QHBoxLayout(header_frame)
+
+        # Logo image
+        logo_label = QLabel()
+        logo_path = os.path.join(os.path.dirname(__file__), 'icon.png')
+        if not os.path.exists(logo_path):
+            logo_path = os.path.join(os.path.dirname(__file__), 'logo2.png')
+        if os.path.exists(logo_path):
+            pix = QPixmap(logo_path).scaled(56, 56, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+            logo_label.setPixmap(pix)
+        h_layout.addWidget(logo_label)
+
+        # Title & Disclaimer text
+        title_text = QLabel(
+            "<h3 style='margin:0; color:#1B5E20;'>SedInConnect 3.2 — Sediment Connectivity Tool</h3>"
+            "<p style='margin:2px 0 0 0; font-size:9pt; color:#495057;'>"
+            "Stand-alone Sediment Connectivity Assessment in River Catchments<br>"
+            "<b>CNR-IRPI Padova</b> | <b>MORPHEUS PRIN 2023-2026 Project</b> (Prot. 2022JEFZRM)<br>"
+            "<span style='color:#D32F2F; font-weight:bold;'>[TESTING / PREVIEW VERSION — Feedback Welcome]</span>"
+            "</p>"
+        )
+        title_text.setAlignment(Qt.AlignVCenter)
+        h_layout.addWidget(title_text, stretch=1)
+        main_layout.addWidget(header_frame)
 
         # Group 1: Inputs
-        grp_inputs = QGroupBox("Inputs & Spatial Layers")
+        grp_inputs = QGroupBox("1. Input Spatial Layers")
         g_layout = QGridLayout(grp_inputs)
 
-        g_layout.addWidget(QLabel("DTM Raster Layer:"), 0, 0)
+        g_layout.addWidget(QLabel("<b>Digital Terrain Model (DTM):</b>"), 0, 0)
         self.dtm_combo = QgsMapLayerComboBox()
         self.dtm_combo.setFilters(Filter_Raster)
+        self.dtm_combo.setToolTip("Select the input elevation raster (raw or pit-filled DTM).")
         g_layout.addWidget(self.dtm_combo, 0, 1)
 
         g_layout.addWidget(QLabel("Target Layer (Streams/Outlets) [Optional]:"), 1, 0)
         self.target_combo = QgsMapLayerComboBox()
         self.target_combo.setFilters(Filter_Vector)
         self.target_combo.setAllowEmptyLayer(True)
+        self.target_combo.setToolTip("Optional stream network lines or lake/reservoir polygons. If blank, connectivity to catchment outlet is calculated.")
         g_layout.addWidget(self.target_combo, 1, 1)
 
         g_layout.addWidget(QLabel("Sink Layer (Depressions) [Optional]:"), 2, 0)
         self.sink_combo = QgsMapLayerComboBox()
         self.sink_combo.setFilters(Filter_Polygon)
         self.sink_combo.setAllowEmptyLayer(True)
+        self.sink_combo.setToolTip("Optional polygon features representing retention basins, quarries, or natural depressions.")
         g_layout.addWidget(self.sink_combo, 2, 1)
 
         main_layout.addWidget(grp_inputs)
 
         # Group 2: Parameters
-        grp_params = QGroupBox("Analysis Parameters")
+        grp_params = QGroupBox("2. Analysis Parameters & Weighting Factor")
         p_layout = QGridLayout(grp_params)
 
         self.auto_weight_cb = QCheckBox("Automatic Cavalli (2013) Surface Roughness Weight Factor")
         self.auto_weight_cb.setChecked(True)
+        self.auto_weight_cb.setToolTip("Computes impedance weight W automatically as 1 - (RI / RI_max) using moving standard deviation of residual topography.")
+        self.auto_weight_cb.toggled.connect(self.toggle_weight_mode)
         p_layout.addWidget(self.auto_weight_cb, 0, 0, 1, 2)
 
-        p_layout.addWidget(QLabel("Roughness Window Size (px):"), 1, 0)
-        self.window_spin = QSpinBox()
-        self.window_spin.setRange(3, 35)
-        self.window_spin.setSingleStep(2)
-        self.window_spin.setValue(3)
-        p_layout.addWidget(self.window_spin, 1, 1)
+        p_layout.addWidget(QLabel("Roughness Window Size:"), 1, 0)
+        self.window_combo = QComboBox()
+        for w in [3, 5, 7, 9, 11, 13, 15, 17, 19, 21, 23, 25, 27, 29, 31, 33, 35]:
+            self.window_combo.addItem(f"{w}x{w} pixels (window={w})", w)
+        self.window_combo.setToolTip("Moving window kernel size for surface roughness computation.")
+        p_layout.addWidget(self.window_combo, 1, 1)
 
         self.normalize_cb = QCheckBox("Log-normalize Weight (Recommended for window size > 5)")
         self.normalize_cb.setChecked(False)
+        self.normalize_cb.setToolTip("Applies natural logarithmic transformation to reduce skewness in large moving windows.")
         p_layout.addWidget(self.normalize_cb, 2, 0, 1, 2)
 
         self.fill_pits_cb = QCheckBox("Fill DTM depressions (Priority-Flood Pit Removal)")
         self.fill_pits_cb.setChecked(False)
+        self.fill_pits_cb.setToolTip("Removes digital elevation pits using Priority-Flood algorithm before routing.")
         p_layout.addWidget(self.fill_pits_cb, 3, 0, 1, 2)
 
         self.save_comp_cb = QCheckBox("Save intermediate components (D_up, D_down, Roughness, Weight)")
         self.save_comp_cb.setChecked(False)
+        self.save_comp_cb.setToolTip("Exports intermediate calculation GeoTIFF files into the same directory as the output IC.")
         p_layout.addWidget(self.save_comp_cb, 4, 0, 1, 2)
 
         self.auto_load_cb = QCheckBox("Automatically add output IC layer to QGIS canvas with ArcGIS Cold-to-Hot colormap")
@@ -239,11 +273,12 @@ class SedInConnectDialog(QDialog):
         main_layout.addWidget(grp_params)
 
         # Group 3: Output Destination
-        grp_out = QGroupBox("Output File")
+        grp_out = QGroupBox("3. Output Destination")
         o_layout = QHBoxLayout(grp_out)
         self.out_file_widget = QgsFileWidget()
         self.out_file_widget.setStorageMode(SaveFile_Mode)
         self.out_file_widget.setFilter("GeoTIFF (*.tif *.TIF)")
+        self.out_file_widget.setToolTip("Select the output GeoTIFF file destination for the Index of Connectivity (IC).")
         o_layout.addWidget(self.out_file_widget)
         main_layout.addWidget(grp_out)
 
@@ -255,11 +290,11 @@ class SedInConnectDialog(QDialog):
 
         self.log_text = QTextEdit()
         self.log_text.setReadOnly(True)
-        self.log_text.setMaximumHeight(130)
+        self.log_text.setMaximumHeight(120)
         self.log_text.setFont(QFont("Consolas", 9))
         main_layout.addWidget(self.log_text)
 
-        # Action Buttons
+        # Action Buttons & References
         btn_layout = QHBoxLayout()
         self.btn_run = QPushButton("Run Calculation")
         self.btn_run.setStyleSheet("background-color: #2E7D32; color: white; font-weight: bold; padding: 8px 24px; font-size: 11pt; border-radius: 4px;")
@@ -271,15 +306,19 @@ class SedInConnectDialog(QDialog):
         btn_layout.addWidget(self.btn_close)
         main_layout.addLayout(btn_layout)
 
+    def toggle_weight_mode(self, checked):
+        self.window_combo.setEnabled(checked)
+        self.normalize_cb.setEnabled(checked)
+
     def start_processing(self):
         dtm_layer = self.dtm_combo.currentLayer()
         if not dtm_layer or not dtm_layer.isValid():
-            QMessageBox.warning(self, "Input Error", "Please select a valid DTM raster layer.")
+            QMessageBox.warning(self, "Input Error", "Please select a valid DTM raster layer from your project.")
             return
 
         out_path_str = self.out_file_widget.filePath().strip()
         if not out_path_str:
-            QMessageBox.warning(self, "Output Error", "Please specify an output path for the Connectivity Index raster.")
+            QMessageBox.warning(self, "Output Error", "Please specify an output path for the Connectivity Index raster (.tif).")
             return
 
         dtm_path = Path(dtm_layer.source())
@@ -292,6 +331,7 @@ class SedInConnectDialog(QDialog):
         sink_path = Path(sink_layer.source()) if (sink_layer and sink_layer.isValid()) else None
 
         out_path = Path(out_path_str)
+        window_size = int(self.window_combo.currentData())
 
         params = ProcessingParams(
             dtm_path=dtm_path,
@@ -301,7 +341,7 @@ class SedInConnectDialog(QDialog):
             sink_path=sink_path,
             use_cavalli_weight=self.auto_weight_cb.isChecked(),
             normalize_weight=self.normalize_cb.isChecked(),
-            window_size=self.window_spin.value(),
+            window_size=window_size,
             fill_dtm=self.fill_pits_cb.isChecked(),
             save_components=self.save_comp_cb.isChecked(),
             save_run_log=True,

@@ -6,6 +6,9 @@
 [![QGIS Plugin](https://img.shields.io/badge/QGIS-3.0%2B-green.svg)](qgis_plugin/)
 [![PyPI package](https://img.shields.io/badge/PyPI-sedinconnect-orange.svg)](python_package/)
 
+> [!NOTE]
+> **Preview / Testing Notice:** The QGIS Plugin, ArcGIS Pro Toolbox, and Pip Package distributions are currently in **Beta Testing Phase (Preview)**. User feedback, bug reports, and suggestions are warmly welcome!
+
 **SedInConnect 3.2** is a free, open-source scientific software for computing the **Index of Sediment Connectivity (IC)** (Cavalli et al., 2013; Borselli et al., 2008) in mountain river catchments.
 
 Developed at **CNR-IRPI Padova (Italy)** within the **MORPHEUS PRIN 2023-2026 Project**.

@@ -4,6 +4,9 @@ Official **Python Toolbox (`.pyt`)** for calculating the **Index of Sediment Con
 
 Developed at **CNR-IRPI Padova (Italy)** within the **MORPHEUS PRIN 2023-2026 Project**.
 
+> [!NOTE]
+> **Status:** The ArcGIS Pro Python Toolbox is currently in **Beta / Testing Phase (Preview)**.
+
 ---
 
 ## 🌟 Key Features in ArcGIS Pro

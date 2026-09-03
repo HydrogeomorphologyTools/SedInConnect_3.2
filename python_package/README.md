@@ -4,6 +4,9 @@ Official Python distribution of **SedInConnect**, providing high-performance, st
 
 Developed at **CNR-IRPI Padova (Italy)** within the **MORPHEUS PRIN 2023-2026 Project**.
 
+> [!NOTE]
+> **Status:** The Python Package (`pip install sedinconnect`) is currently in **Beta / Testing Phase (Preview)**.
+
 ---
 
 ## 📦 Installation
