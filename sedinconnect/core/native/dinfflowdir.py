@@ -2,7 +2,43 @@
 dinfflowdir.py - 100% Exact Port of TauDEM 5.3.7 DinfFlowDir C++ Implementation.
 """
 import numpy as np
-import numba as nb
+try:
+    import numba as nb
+    HAVE_NUMBA = True
+except ImportError:
+    HAVE_NUMBA = False
+    class _MockNumba:
+        int8 = np.int8
+        int16 = np.int16
+        int32 = np.int32
+        int64 = np.int64
+        uint8 = np.uint8
+        uint16 = np.uint16
+        uint32 = np.uint32
+        uint64 = np.uint64
+        float32 = np.float32
+        float64 = np.float64
+        boolean = np.bool_
+        
+        @staticmethod
+        def njit(*args, **kwargs):
+            if len(args) == 1 and callable(args[0]):
+                return args[0]
+            def decorator(func):
+                return func
+            return decorator
+            
+        @staticmethod
+        def jit(*args, **kwargs):
+            if len(args) == 1 and callable(args[0]):
+                return args[0]
+            def decorator(func):
+                return func
+            return decorator
+            
+        prange = range
+    nb = _MockNumba()
+
 
 @nb.njit
 def _vslope(e0, e1, e2, d1, d2, dd):

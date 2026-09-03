@@ -1,70 +1,82 @@
 # -*- coding: utf-8 -*-
 """
 SedInConnect QGIS Plugin entry point.
-Cross-platform and Qt5/Qt6 version-independent via qgis.PyQt.
+Cross-platform, Qt5/Qt6 independent, and self-healing with zero-dependency fallback.
 """
 
 import sys
 import subprocess
 from pathlib import Path
 
-# Ensure plugin folder is in sys.path so internal imports resolve cleanly
+# Ensure plugin folder is in sys.path
 _p_dir = str(Path(__file__).resolve().parent)
 if _p_dir not in sys.path:
     sys.path.insert(0, _p_dir)
 
 
 def ensure_dependencies():
-    """Check required scientific packages (numba, numpy, scipy, matplotlib) and auto-install if missing."""
-    missing = []
-    for pkg in ["numba", "numpy", "scipy", "matplotlib"]:
+    """
+    Check if numba JIT compiler is available for maximum speed.
+    If missing, prompts user for automatic 1-click installation with PEP 668 / user-space flags.
+    If declined or offline, falls back gracefully to pure native NumPy/SciPy without blocking.
+    """
+    try:
+        import numba
+        return
+    except ImportError:
+        pass
+
+    try:
+        from qgis.PyQt.QtWidgets import QMessageBox
+    except ImportError:
         try:
-            __import__(pkg)
+            from PyQt5.QtWidgets import QMessageBox
         except ImportError:
-            missing.append(pkg)
+            from PyQt6.QtWidgets import QMessageBox
 
-    if missing:
-        try:
-            from qgis.PyQt.QtWidgets import QMessageBox
-        except ImportError:
+    btn_yes = getattr(QMessageBox, "Yes", None) or getattr(getattr(QMessageBox, "StandardButton", None), "Yes", None)
+    btn_no = getattr(QMessageBox, "No", None) or getattr(getattr(QMessageBox, "StandardButton", None), "No", None)
+    buttons = (btn_yes | btn_no) if (btn_yes is not None and btn_no is not None) else QMessageBox.Ok
+
+    res = QMessageBox.question(
+        None,
+        "SedInConnect — Optional Speed Acceleration",
+        "SedInConnect can use the 'numba' JIT compiler for ultra-fast calculation speed.\n\n"
+        "Would you like QGIS to automatically download and install 'numba' in your user directory now?\n\n"
+        "(Note: If you click 'No', SedInConnect will still work smoothly using native NumPy/SciPy).",
+        buttons
+    )
+
+    if res == btn_yes:
+        installed = False
+        # Try installation strategies (PEP 668 --break-system-packages, --user, standard)
+        for cmd in [
+            [sys.executable, "-m", "pip", "install", "--user", "--break-system-packages", "numba"],
+            [sys.executable, "-m", "pip", "install", "--user", "numba"],
+            [sys.executable, "-m", "pip", "install", "numba"],
+        ]:
             try:
-                from PyQt5.QtWidgets import QMessageBox
-            except ImportError:
-                from PyQt6.QtWidgets import QMessageBox
+                subprocess.check_call(cmd)
+                installed = True
+                break
+            except Exception:
+                continue
 
-        # Safe cross-version enum resolution
-        btn_yes = getattr(QMessageBox, "Yes", None)
-        if btn_yes is None:
-            btn_yes = getattr(getattr(QMessageBox, "StandardButton", None), "Yes", None)
-
-        btn_no = getattr(QMessageBox, "No", None)
-        if btn_no is None:
-            btn_no = getattr(getattr(QMessageBox, "StandardButton", None), "No", None)
-
-        buttons = (btn_yes | btn_no) if (btn_yes is not None and btn_no is not None) else QMessageBox.Ok
-
-        res = QMessageBox.question(
-            None,
-            "SedInConnect — Dependency Setup",
-            "SedInConnect requires the following scientific Python package(s) for native high-performance calculations in QGIS:\n\n"
-            + "\n".join([f"  • {p}" for p in missing])
-            + "\n\nWould you like QGIS to automatically download and install them now?",
-            buttons
-        )
-        if res == btn_yes:
-            try:
-                subprocess.check_call([sys.executable, "-m", "pip", "install", *missing])
-                QMessageBox.information(
-                    None,
-                    "SedInConnect",
-                    f"Successfully installed {', '.join(missing)}!\nPlease enable the plugin in QGIS Plugin Manager."
-                )
-            except Exception as e:
-                QMessageBox.critical(
-                    None,
-                    "Installation Error",
-                    f"Failed to install dependencies automatically:\n{e}\n\nPlease run in terminal:\n{sys.executable} -m pip install {' '.join(missing)}"
-                )
+        if installed:
+            QMessageBox.information(
+                None,
+                "SedInConnect",
+                "Successfully installed numba! High-speed JIT acceleration is active.\n"
+                "Please enable the plugin in QGIS Plugin Manager."
+            )
+        else:
+            QMessageBox.information(
+                None,
+                "SedInConnect",
+                "Could not install numba automatically.\n\n"
+                "SedInConnect will continue running in standard native NumPy mode.\n"
+                "(On Linux/Debian systems, you can optionally run: sudo apt install python3-numba)"
+            )
 
 
 def classFactory(iface):
