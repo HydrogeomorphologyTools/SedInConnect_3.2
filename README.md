@@ -14,7 +14,7 @@ Developed at **CNR-IRPI Padova (Italy)** within the **MORPHEUS PRIN 2023-2026 Pr
 
 ---
 
-## 🌟 3 Official Ways to Use SedInConnect 3.2
+## 🌟 Official Ecosystem & Ways to Use SedInConnect 3.2
 
 SedInConnect 3.2 is structured into 3 dedicated execution modalities sharing the **exact same 100% native Numba/NumPy computation engine**:
 
@@ -23,6 +23,7 @@ SedInConnect 3.2 is structured into 3 dedicated execution modalities sharing the
 | 🖥️ **Stand-alone Desktop Executable** | Single `.exe` binary for Windows (64-bit). No installation or Python required. | Practitioners, students, GIS users without Python. | [Download Binary](#1-stand-alone-executable-windows) |
 | 🗺️ **QGIS Official Plugin & Processing Toolbox** | Full GUI dialog + native QGIS Processing algorithms (with batch mode & Graphical Modeler). | GIS specialists & spatial analysts in QGIS. | [QGIS Plugin Guide](qgis_plugin/) |
 | 🐍 **Python Package & Scripting API** | Installable via `pip` with high-level Python API (`import sedinconnect as sic; sic.compute_ic(...)`) and CLI command. | Data scientists, researchers, automation pipelines. | [Python Package Guide](python_package/) |
+| 🌐 **ArcGIS Pro Python Toolbox (`.pyt`)** | Native ArcGIS Pro geoprocessing tool with ModelBuilder & `arcpy` scripting support. | ArcGIS Pro specialists & ESRI workflows. | [ArcGIS Toolbox Guide](arcgis_toolbox/) |
 
 ---
 
@@ -117,3 +118,14 @@ If you use SedInConnect in your scientific research, please cite:
 1. **Cavalli, M., Trevisani, S., Comiti, F., & Marchi, L. (2013).** Geomorphometric assessment of spatial sediment connectivity in small Alpine catchments. *Geomorphology*, 188, 31-41. [doi:10.1016/j.geomorph.2012.05.007](https://doi.org/10.1016/j.geomorph.2012.05.007)
 2. **Crema, S., & Cavalli, M. (2018).** SedInConnect: a stand-alone, free and open source tool for the assessment of sediment connectivity. *Computers & Geosciences*, 111, 39-45. [doi:10.1016/j.cageo.2017.10.009](https://doi.org/10.1016/j.cageo.2017.10.009)
 3. **Borselli, L., Cassi, P., & Torri, D. (2008).** Prolegomena to sediment connectivity: Thinking with the flow. *Catena*, 75(3), 268-277. [doi:10.1016/j.catena.2008.07.006](https://doi.org/10.1016/j.catena.2008.07.006)
+
+---
+
+## 🌐 4. ArcGIS Pro Python Toolbox (`.pyt`)
+
+Located in the [`arcgis_toolbox/`](arcgis_toolbox/) subfolder.
+
+* **Native Geoprocessing Tool:** Add `SedInConnect.pyt` directly to the ArcGIS Pro Catalog Pane (Toolboxes ➔ Add Toolbox).
+* **ModelBuilder & arcpy Support:** Seamlessly connect SedInConnect into ESRI geoprocessing models and automated scripts.
+
+👉 **[Read the Full ArcGIS Pro Toolbox Documentation](arcgis_toolbox/)**
