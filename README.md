@@ -4,7 +4,7 @@
 [![License: GPL v2](https://img.shields.io/badge/License-GPL%20v2-blue.svg)](LICENSE)
 [![Python: 3.9+](https://img.shields.io/badge/Python-3.9%20%7C%203.10%20%7C%203.11%20%7C%203.12-blue)](https://www.python.org/)
 [![QGIS Plugin](https://img.shields.io/badge/QGIS-3.0%2B-green.svg)](qgis_plugin/)
-[![PyPI package](https://img.shields.io/badge/PyPI-sedinconnect-orange.svg)](python_package/)
+[![PyPI package](https://img.shields.io/pypi/v/sedinconnect?color=orange)](https://pypi.org/project/sedinconnect/)
 
 > [!NOTE]
 > **Preview / Testing Notice:** The QGIS Plugin, ArcGIS Pro Toolbox, and Pip Package distributions are currently in **Beta Testing Phase (Preview)**. User feedback, bug reports, and suggestions are warmly welcome!
