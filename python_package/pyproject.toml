@@ -1,0 +1,58 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sedinconnect"
+version = "3.2.0"
+description = "Stand-alone sediment connectivity index (IC) assessment tool for catchments"
+readme = "README.md"
+authors = [
+  { name = "Stefano Crema", email = "stefano.crema@irpi.cnr.it" },
+  { name = "Marco Cavalli", email = "marco.cavalli@irpi.cnr.it" }
+]
+maintainers = [
+  { name = "Stefano Crema", email = "stefano.crema@irpi.cnr.it" }
+]
+license = { text = "GPL-2.0-or-later" }
+keywords = ["sediment", "connectivity", "hydrology", "geomorphology", "dtm", "cavalli", "morpheus"]
+classifiers = [
+  "Development Status :: 5 - Production/Stable",
+  "Intended Audience :: Science/Research",
+  "Topic :: Scientific/Engineering :: GIS",
+  "Topic :: Scientific/Engineering :: Hydrology",
+  "License :: OSI Approved :: GNU General Public License v2 or later (GPLv2+)",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Operating System :: OS Independent"
+]
+requires-python = ">=3.9"
+dependencies = [
+  "numpy>=1.20",
+  "numba>=0.56",
+  "scipy>=1.8",
+  "matplotlib>=3.5"
+]
+
+[project.optional-dependencies]
+gui = ["PyQt5>=5.15"]
+all = ["PyQt5>=5.15"]
+
+[project.urls]
+Homepage = "https://github.com/HydrogeomorphologyTools/SedInConnect_3.2"
+Documentation = "https://github.com/HydrogeomorphologyTools/SedInConnect_3.2#readme"
+Repository = "https://github.com/HydrogeomorphologyTools/SedInConnect_3.2.git"
+"Bug Tracker" = "https://github.com/HydrogeomorphologyTools/SedInConnect_3.2/issues"
+
+[project.scripts]
+sedinconnect = "sedinconnect.main:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["sedinconnect*"]
+
+[tool.setuptools.package-data]
+sedinconnect = ["assets/*"]
