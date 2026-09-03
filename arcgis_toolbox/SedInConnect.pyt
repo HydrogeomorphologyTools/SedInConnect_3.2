@@ -91,6 +91,25 @@ def resolve_raster_output(out_text, temp_dir, prefix="ic_out"):
     return p, False, out_text
 
 
+
+def get_arcgis_numba_help_message():
+    """Detect numpy/arcgis version and provide the exact command."""
+    import numpy as np
+    np_v = getattr(np, "__version__", "1.20")
+    if np_v.startswith("2."):
+        cmd = 'pip install --user numba'
+    else:
+        cmd = 'pip install --user "numpy<2" "numba>=0.56"'
+    return (
+        "\n------------------------------------------------------------\n"
+        "⚠️ [PERFORMANCE NOTICE] 'numba' JIT compiler is not installed in your ArcGIS Pro environment.\n"
+        "   SedInConnect is running in pure NumPy fallback mode (calculations are 100% exact but slower).\n\n"
+        "   To achieve full 10x-20x JIT acceleration, open 'Python Command Prompt' (in Windows Start menu) and run:\n"
+        f"   {cmd}\n"
+        "------------------------------------------------------------"
+    )
+
+
 class Toolbox(object):
     def __init__(self):
         self.label = "SedInConnect 3.2"
@@ -451,6 +470,11 @@ class CalculateSedimentConnectivity(object):
 
         def log_to_arcgis(msg):
             messages.addMessage(str(msg))
+
+        try:
+            import numba
+        except ImportError:
+            messages.addWarning(get_arcgis_numba_help_message())
 
         processor = ConnectivityProcessor(log_func=log_to_arcgis)
         processor.process(params)

@@ -1,111 +1,59 @@
-# SedInConnect — ArcGIS Pro Python Toolbox (`SedInConnect.pyt`)
+# 🗺️ SedInConnect 3.2 — ArcGIS Pro Python Toolbox (.pyt)
 
-Official **Python Toolbox (`.pyt`)** for calculating the **Index of Sediment Connectivity (IC)** (Cavalli et al., 2013; Borselli et al., 2008) directly in **ArcGIS Pro** and **ArcGIS Desktop**.
-
-Developed at **CNR-IRPI Padova (Italy)** within the **MORPHEUS PRIN 2023-2026 Project**.
+Official Python Toolbox for **ArcGIS Pro** (2.8+ / 3.0 / 3.1 / 3.2 / 3.3+).
 
 > [!NOTE]
-> **Status:** The ArcGIS Pro Python Toolbox is currently in **Beta / Testing Phase (Preview)**.
+> **Beta Testing Phase (Preview):** This ArcGIS Pro Python Toolbox is currently released as a testing and preview feature. Feedback, bug reports, and suggestions are warmly welcomed!
 
 ---
 
-## 🌟 Key Features in ArcGIS Pro
+## 🚀 Quick Start in ArcGIS Pro
 
-* **Native Python Toolbox (`.pyt`):** Zero DLL compilation or separate installation required. Works seamlessly out of the box in ArcGIS Pro.
-* **ModelBuilder & Geoprocessing Integration:** Fully compatible with ArcGIS Pro ModelBuilder, Batch Processing, and Python scripting (`arcpy`).
-* **Complete Parameter Control:** Select DTM layers, target river lines/polygons, sink depressions, roughness window sizes, and export intermediate components ($D_{up}$, $D_{down}$, Roughness, Weight).
-* **High Performance Engine:** Runs the pure native 64-bit Numba/NumPy computation pipeline with multithreaded acceleration.
+1. Open **ArcGIS Pro** and load your project.
+2. In the **Catalog Pane** (*View ➔ Catalog Pane*):
+   * Expand **Project** ➔ Right-click **Toolboxes** ➔ Click **Add Toolbox**.
+   * Browse to this folder and select **`SedInConnect.pyt`**.
+3. Under *Toolboxes ➔ SedInConnect 3.2*, double-click:
+   👉 **`Calculate Sediment Connectivity Index (IC)`**.
 
 ---
 
-## 📥 How to Load and Use in ArcGIS Pro
+## ⚡ High-Speed Acceleration: Installing Numba in ArcGIS Pro
 
-### 1. Add Toolbox to ArcGIS Pro Project
-1. Open your project in **ArcGIS Pro**.
-2. Open the **Catalog Pane** (View ➔ Catalog Pane).
-3. Right-click **Toolboxes** ➔ **Add Toolbox**.
-4. Browse to the `arcgis_toolbox/` folder and select **`SedInConnect.pyt`**.
-5. The toolbox `SedInConnect 3.2` will appear under your Toolboxes list.
+ArcGIS Pro comes with standard Python without Numba pre-installed. While SedInConnect includes a built-in pure NumPy fallback to prevent errors, **installing Numba unlocks full 10x–20x calculation speedups** (processing 15+ million pixels in seconds rather than minutes).
 
-### 2. Run the Tool
-1. Expand **`SedInConnect 3.2`** ➔ double-click **`Calculate Sediment Connectivity Index (IC)`**.
-2. Select your **Input DTM** from the map layers dropdown.
-3. *(Optional)* Select **Target Features** (streams, dams, reservoirs) or leave blank for catchment outlet calculation.
-4. *(Optional)* Select **Sink Features** (internal retention basins).
-5. Specify the **Output Connectivity Index (IC)** raster path (e.g. `C:/GIS/ic_output.tif`).
-6. Click **Run**.
+### Step-by-Step Installation (Takes 1 Minute):
 
-### 3. Using in Python Scripts (`arcpy`)
+1. Close ArcGIS Pro.
+2. In the Windows Start Menu, search and open:  
+   👉 **Python Command Prompt** *(located in the ArcGIS folder)*.
+3. Run the command matching your ArcGIS Pro version:
 
-```python
-import arcpy
-
-# Import SedInConnect Python Toolbox
-arcpy.ImportToolbox(r"C:/path/to/arcgis_toolbox/SedInConnect.pyt")
-
-# Run calculation
-arcpy.sedinconnect.CalculateSedimentConnectivity(
-    in_dtm="dtmfel.tif",
-    in_target="streams.shp",
-    use_auto_weight=True,
-    window_size=3,
-    out_ic="ic_output.tif"
-)
+#### For ArcGIS Pro 2.9, 3.0, 3.1, 3.2 (NumPy 1.x):
+```cmd
+pip install --user "numpy<2" "numba>=0.56"
 ```
 
+#### For ArcGIS Pro 3.3+ (NumPy 2.x):
+```cmd
+pip install --user numba
+```
+
+#### Alternative: Via ArcGIS Pro GUI:
+1. Open ArcGIS Pro ➔ Click **Settings** (bottom left) ➔ **Package Manager**.
+2. If your default environment is active, search for `numba` and click **Install**.
+
 ---
 
+## 🌟 Supported Features in ArcGIS Pro
+* **Table of Contents (TOC) Map Layers:** Directly select layers from your active map.
+* **File Geodatabase (.gdb):** Native support for reading and writing directly into ESRI `.gdb` feature classes and raster datasets.
+* **Multi-threaded Roughness:** Configurable chunk sizes (`512` to `4096` px) and parallel CPU worker count.
+* **All Calculation Modalities:** Target features, sink polygons, log-normalized weights, and Pit-filling.
 
 ---
 
-## ⚡ High-Performance Acceleration: Installing Numba (Optional but Recommended)
-
-> [!TIP]
-> **Performance Note:** SedInConnect includes a 100% pure NumPy/SciPy fallback and will run even without Numba. However, **Numba JIT compilation provides a 10x–20x calculation speedup** (reducing runtime from minutes to a few seconds on large multi-million pixel DEMs).
-
-If you want to ensure maximum calculation performance on your operating system:
-
-### 🪟 Windows
-* **Stand-alone Executable (`SedInConnect_3.2.exe`):** Numba is already pre-compiled inside. No installation required.
-* **QGIS on Windows:** Open **OSGeo4W Shell** (search in the Windows Start menu) and run:
-  ```cmd
-  pip install numba
-  ```
-  *(Or simply click **"Yes"** on the automated prompt when loading the plugin in QGIS).*
-* **Standard Python environment:**
-  ```cmd
-  pip install numba
-  ```
-
-### 🐧 Linux (Ubuntu, Debian, Fedora, Arch)
-On modern Linux distributions (with PEP 668 environment protection):
-* **Ubuntu / Debian / Linux Mint (Recommended via native package manager):**
-  ```bash
-  sudo apt update && sudo apt install -y python3-numba
-  ```
-* **Fedora / RedHat:**
-  ```bash
-  sudo dnf install python3-numba
-  ```
-* **Arch Linux / Manjaro:**
-  ```bash
-  sudo pacman -S python-numba
-  ```
-* **Via user-space pip:**
-  ```bash
-  python3 -m pip install --user --break-system-packages numba
-  ```
-
-### 🍏 macOS
-* **Terminal / Homebrew Python:**
-  ```bash
-  pip3 install --user numba
-  ```
-* **Inside QGIS on macOS:** Open the **Python Console** in QGIS (*Plugins ➔ Python Console*) and run:
-  ```python
-  import subprocess, sys; subprocess.check_call([sys.executable, "-m", "pip", "install", "--user", "numba"])
-  ```
-
-## 📚 Scientific References
-1. **Cavalli, M., Trevisani, S., Comiti, F., & Marchi, L. (2013).** Geomorphometric assessment of spatial sediment connectivity in small Alpine catchments. *Geomorphology*, 188, 31-41. [doi:10.1016/j.geomorph.2012.05.007](https://doi.org/10.1016/j.geomorph.2012.05.007)
-2. **Crema, S., & Cavalli, M. (2018).** SedInConnect: a stand-alone, free and open source tool for the assessment of sediment connectivity. *Computers & Geosciences*, 111, 39-45. [doi:10.1016/j.cageo.2017.10.009](https://doi.org/10.1016/j.cageo.2017.10.009)
+## 📚 Scientific Reference & Acknowledgements
+* Cavalli, M., Trevisani, S., Comiti, F., & Marchi, L. (2013). *Geomorphology*, 188, 31-41.
+* Borselli, L., Cassi, P., & Torri, D. (2008). *Catena*, 75(3), 268-277.
+* **CNR-IRPI Padova** — Developed within **MORPHEUS PRIN 2023-2026** (Prot. 2022JEFZRM).
