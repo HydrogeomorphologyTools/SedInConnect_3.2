@@ -9,8 +9,11 @@ import os
 from qgis.core import QgsApplication
 
 try:
-    from qgis.PyQt.QtWidgets import QAction
     from qgis.PyQt.QtGui import QIcon
+    try:
+        from qgis.PyQt.QtWidgets import QAction
+    except ImportError:
+        from qgis.PyQt.QtGui import QAction
 except ImportError:
     try:
         from PyQt5.QtWidgets import QAction

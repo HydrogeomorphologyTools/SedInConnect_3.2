@@ -1,12 +1,30 @@
 import os
 import numpy as np
 from pathlib import Path
-from PyQt5 import QtWidgets, QtCore, QtGui
-from PyQt5.QtWidgets import (QVBoxLayout, QHBoxLayout, QLabel, QPushButton, 
-                             QMessageBox, QWidget, QFileDialog)
-from PyQt5.QtCore import Qt
+
+try:
+    from qgis.PyQt import QtWidgets, QtCore, QtGui
+    from qgis.PyQt.QtWidgets import (QVBoxLayout, QHBoxLayout, QLabel, QPushButton, 
+                                     QMessageBox, QWidget, QFileDialog)
+    from qgis.PyQt.QtCore import Qt
+except ImportError:
+    try:
+        from PyQt5 import QtWidgets, QtCore, QtGui
+        from PyQt5.QtWidgets import (QVBoxLayout, QHBoxLayout, QLabel, QPushButton, 
+                                     QMessageBox, QWidget, QFileDialog)
+        from PyQt5.QtCore import Qt
+    except ImportError:
+        from PyQt6 import QtWidgets, QtCore, QtGui
+        from PyQt6.QtWidgets import (QVBoxLayout, QHBoxLayout, QLabel, QPushButton, 
+                                     QMessageBox, QWidget, QFileDialog)
+        from PyQt6.QtCore import Qt
 
 from sedinconnect.utils.raster import LargeFileRasterReader
+
+# Cross-version enum
+Qt_AlignCenter = getattr(Qt, "AlignCenter", None) or getattr(getattr(Qt, "AlignmentFlag", None), "AlignCenter", None)
+Qt_Horizontal = getattr(Qt, "Horizontal", None) or getattr(getattr(Qt, "Orientation", None), "Horizontal", None)
+
 
 class ResultPreviewDialog(QtWidgets.QDialog):
     """Dialog to preview IC results with map and statistics matching v3.0 style"""
@@ -15,8 +33,8 @@ class ResultPreviewDialog(QtWidgets.QDialog):
         super().__init__(parent)
         self.ic_path = Path(ic_raster_path)
         self.setWindowTitle("SedInConnect Results Preview")
-        self.setMinimumSize(1400, 800)
-        self.resize(1600, 900)
+        self.setMinimumSize(1200, 700)
+        self.resize(1400, 800)
 
         # Load raster data
         try:
@@ -48,108 +66,71 @@ class ResultPreviewDialog(QtWidgets.QDialog):
         """Initialize the UI with delayed matplotlib imports"""
         from matplotlib.figure import Figure
         from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
-        from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
 
-        layout = QVBoxLayout(self)
+        main_layout = QHBoxLayout(self)
 
-        # Title
-        title = QLabel(f"<h2>Connectivity Index Results</h2><p><i>{self.ic_path.name}</i></p>")
-        title.setAlignment(Qt.AlignCenter)
-        layout.addWidget(title)
+        # Left panel: Info & Statistics
+        left_panel = QWidget()
+        left_layout = QVBoxLayout(left_panel)
+        left_panel.setMaximumWidth(400)
 
-        # Create horizontal splitter
-        splitter = QtWidgets.QSplitter(Qt.Horizontal)
+        # File info
+        info_label = QLabel(f"<b>File:</b> {self.ic_path.name}")
+        left_layout.addWidget(info_label)
 
-        # Left panel: IC Map
-        left_widget = QWidget()
-        left_layout = QVBoxLayout(left_widget)
-        self.map_figure = Figure(figsize=(8, 10), facecolor='white')
-        self.map_canvas = FigureCanvas(self.map_figure)
-        self.map_toolbar = NavigationToolbar(self.map_canvas, self)
-        left_layout.addWidget(QLabel("<b>Index of Connectivity (IC) Map</b>"))
-        left_layout.addWidget(self.map_toolbar)
-        left_layout.addWidget(self.map_canvas)
-        self.plot_ic_map()
-        splitter.addWidget(left_widget)
+        # Statistics
+        stats_group = QtWidgets.QGroupBox("Raster Statistics")
+        stats_layout = QVBoxLayout(stats_group)
 
-        # Right panel: Statistics
-        right_widget = QWidget()
-        right_layout = QVBoxLayout(right_widget)
-        self.hist_figure = Figure(figsize=(6, 9), facecolor='white')
-        self.hist_canvas = FigureCanvas(self.hist_figure)
-        right_layout.addWidget(QLabel("<b>IC Distribution & Statistics</b>"))
-        right_layout.addWidget(self.hist_canvas)
-        self.plot_histogram_and_stats()
-        splitter.addWidget(right_widget)
+        mean_val = float(np.mean(self.ic_data_valid))
+        std_val = float(np.std(self.ic_data_valid))
+        median_val = float(np.median(self.ic_data_valid))
+        min_val = float(np.min(self.ic_data_valid))
+        max_val = float(np.max(self.ic_data_valid))
+        valid_count = len(self.ic_data_valid)
 
-        splitter.setSizes([960, 640])
-        layout.addWidget(splitter)
+        stats_text = (
+            f"<b>Valid Pixels:</b> {valid_count:,}<br>"
+            f"<b>Mean:</b> {mean_val:.4f}<br>"
+            f"<b>Std Dev:</b> {std_val:.4f}<br>"
+            f"<b>Median:</b> {median_val:.4f}<br>"
+            f"<b>Min:</b> {min_val:.4f}<br>"
+            f"<b>Max:</b> {max_val:.4f}"
+        )
+        stats_label = QLabel(stats_text)
+        stats_layout.addWidget(stats_label)
+        left_layout.addWidget(stats_group)
 
-        # Close buttons
-        button_layout = QHBoxLayout()
-        button_layout.addStretch()
-        
-        self.export_btn = QPushButton("Export Figures...")
-        self.export_btn.clicked.connect(self.export_figures)
-        self.export_btn.setStyleSheet("background-color: #FF9800; color: white; font-weight: bold; padding: 8px; border-radius: 4px;")
-        button_layout.addWidget(self.export_btn)
-        
-        self.close_btn = QPushButton("Close")
-        self.close_btn.clicked.connect(self.accept)
-        self.close_btn.setStyleSheet("background-color: #4CAF50; color: white; font-weight: bold; padding: 8px; border-radius: 4px;")
-        button_layout.addWidget(self.close_btn)
-        
-        layout.addLayout(button_layout)
+        # Histogram Figure
+        hist_fig = Figure(figsize=(4, 3), dpi=100)
+        hist_canvas = FigureCanvas(hist_fig)
+        ax_hist = hist_fig.add_subplot(111)
+        ax_hist.hist(self.ic_data_valid, bins=50, color='#1E88E5', edgecolor='black', alpha=0.7)
+        ax_hist.set_title("IC Distribution", fontsize=10)
+        ax_hist.set_xlabel("Connectivity Index (IC)", fontsize=8)
+        ax_hist.set_ylabel("Frequency", fontsize=8)
+        ax_hist.grid(True, linestyle='--', alpha=0.5)
+        hist_fig.tight_layout()
+        left_layout.addWidget(hist_canvas)
 
-    def plot_ic_map(self):
-        """Plot the IC map"""
-        ax = self.map_figure.add_subplot(111)
-        # Plot with inverted RdYlGn colormap (green = high connectivity, red = low)
-        ic_masked = np.ma.masked_invalid(self.ic_data)
-        im = ax.imshow(ic_masked, cmap='RdYlGn_r', aspect='equal', interpolation='nearest')
-        
-        cbar = self.map_figure.colorbar(im, ax=ax, orientation='vertical', pad=0.02, shrink=0.8)
-        cbar.set_label('IC Value (log10)', fontsize=11, fontweight='bold')
-        ax.set_title('Index of Connectivity', fontsize=13, fontweight='bold', pad=10)
-        ax.axis('off')
-        self.map_figure.tight_layout()
-        self.map_canvas.draw()
+        left_layout.addStretch()
 
-    def plot_histogram_and_stats(self):
-        """Plot histogram and compute statistics exactly matching v3.0 style"""
-        ic_valid = self.ic_data_valid
-        mean_val = float(np.mean(ic_valid))
-        median_val = float(np.median(ic_valid))
-        std_val = float(np.std(ic_valid))
-        min_val = float(np.min(ic_valid))
-        max_val = float(np.max(ic_valid))
-        
-        ax = self.hist_figure.add_subplot(111)
-        ax.hist(ic_valid, bins=50, color='steelblue', edgecolor='black', alpha=0.7)
-        
-        ax.axvline(mean_val, color='red', linestyle='--', linewidth=2, label=f'Mean: {mean_val:.3f}')
-        ax.axvline(median_val, color='green', linestyle='--', linewidth=2, label=f'Median: {median_val:.3f}')
-        ax.plot([], [], color='none', label=f'Std: {std_val:.3f}')
-        ax.plot([], [], color='none', label=f'Min: {min_val:.3f}')
-        ax.plot([], [], color='none', label=f'Max: {max_val:.3f}')
-        
-        ax.set_xlabel('IC Value (log10)', fontsize=12, fontweight='bold')
-        ax.set_ylabel('Frequency', fontsize=12, fontweight='bold')
-        ax.set_title('Distribution of IC Values', fontsize=13, fontweight='bold', pad=15)
-        ax.legend(loc='upper right', framealpha=0.9)
-        ax.grid(True, alpha=0.3, linestyle='--')
-        self.hist_figure.tight_layout()
-        self.hist_canvas.draw()
+        btn_close = QPushButton("Close")
+        btn_close.clicked.connect(self.accept)
+        left_layout.addWidget(btn_close)
 
-    def export_figures(self):
-        """Export the figures as image files"""
-        directory = QFileDialog.getExistingDirectory(self, "Select Export Directory")
-        if not directory:
-            return
-        dir_path = Path(directory)
-        try:
-            self.map_figure.savefig(dir_path / f"{self.ic_path.stem}_map.png", dpi=300, bbox_inches='tight')
-            self.hist_figure.savefig(dir_path / f"{self.ic_path.stem}_histogram.png", dpi=300, bbox_inches='tight')
-            QMessageBox.information(self, "Export Successful", f"Figures exported to:\n{dir_path}")
-        except Exception as e:
-            QMessageBox.critical(self, "Export Error", f"Failed to export figures:\n{str(e)}")
+        main_layout.addWidget(left_panel)
+
+        # Right panel: Map Display
+        map_fig = Figure(figsize=(8, 7), dpi=100)
+        map_canvas = FigureCanvas(map_fig)
+        ax_map = map_fig.add_subplot(111)
+
+        # Custom cold-to-hot colormap
+        im = ax_map.imshow(self.ic_data, cmap='jet', vmin=min_val, vmax=max_val)
+        map_fig.colorbar(im, ax=ax_map, label="Sediment Connectivity Index (IC)")
+        ax_map.set_title(f"SedInConnect IC Map — {self.ic_path.name}")
+        ax_map.axis('off')
+        map_fig.tight_layout()
+
+        main_layout.addWidget(map_canvas, stretch=1)

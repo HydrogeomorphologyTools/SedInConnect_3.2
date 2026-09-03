@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 """
-Dedicated PyQt5 Dialog for SedInConnect in QGIS.
+Dedicated PyQt Dialog for SedInConnect in QGIS.
 Features QGIS MapLayer combo boxes, live progress, ArcGIS Cold-to-Hot Stretched colormap styling,
-and interactive results preview window.
+and interactive results preview window. Cross-platform Qt5/Qt6 compatible.
 """
 
 import os
@@ -12,30 +12,38 @@ import numpy as np
 from pathlib import Path
 
 try:
-    from qgis.PyQt.QtWidgets import (
-except ImportError:
-    try:
-        from PyQt5.QtWidgets import (
-    except ImportError:
-        from PyQt6.QtWidgets import (
-    QDialog, QVBoxLayout, QHBoxLayout, QGridLayout, QGroupBox,
-    QLabel, QPushButton, QCheckBox, QSpinBox, QComboBox,
-    QProgressBar, QTextEdit, QFileDialog, QMessageBox, QWidget
-)
-try:
+    from qgis.PyQt import QtCore, QtGui, QtWidgets
     from qgis.PyQt.QtCore import Qt, pyqtSignal, QObject
-except ImportError:
-    try:
-        from PyQt5.QtCore import Qt, pyqtSignal, QObject
-    except ImportError:
-        from PyQt6.QtCore import Qt, pyqtSignal, QObject
-try:
     from qgis.PyQt.QtGui import QIcon, QFont, QColor
+    from qgis.PyQt.QtWidgets import (
+        QDialog, QVBoxLayout, QHBoxLayout, QGridLayout, QGroupBox,
+        QLabel, QPushButton, QCheckBox, QSpinBox, QComboBox,
+        QProgressBar, QTextEdit, QFileDialog, QMessageBox, QWidget
+    )
 except ImportError:
     try:
+        from PyQt5 import QtCore, QtGui, QtWidgets
+        from PyQt5.QtCore import Qt, pyqtSignal, QObject
         from PyQt5.QtGui import QIcon, QFont, QColor
+        from PyQt5.QtWidgets import (
+            QDialog, QVBoxLayout, QHBoxLayout, QGridLayout, QGroupBox,
+            QLabel, QPushButton, QCheckBox, QSpinBox, QComboBox,
+            QProgressBar, QTextEdit, QFileDialog, QMessageBox, QWidget
+        )
     except ImportError:
+        from PyQt6 import QtCore, QtGui, QtWidgets
+        from PyQt6.QtCore import Qt, pyqtSignal, QObject
         from PyQt6.QtGui import QIcon, QFont, QColor
+        from PyQt6.QtWidgets import (
+            QDialog, QVBoxLayout, QHBoxLayout, QGridLayout, QGroupBox,
+            QLabel, QPushButton, QCheckBox, QSpinBox, QComboBox,
+            QProgressBar, QTextEdit, QFileDialog, QMessageBox, QWidget
+        )
+
+# Safe enum resolution across Qt5 and Qt6
+Qt_AlignCenter = getattr(Qt, "AlignCenter", None)
+if Qt_AlignCenter is None:
+    Qt_AlignCenter = getattr(Qt.AlignmentFlag, "AlignCenter")
 
 from qgis.core import (
     QgsProject, QgsMapLayerProxyModel, QgsRasterLayer,
@@ -43,6 +51,29 @@ from qgis.core import (
     QgsRasterBandStats
 )
 from qgis.gui import QgsMapLayerComboBox, QgsFileWidget
+
+# Proxy filter enums
+Filter_Raster = getattr(QgsMapLayerProxyModel, "RasterLayer", None)
+if Filter_Raster is None:
+    Filter_Raster = getattr(getattr(QgsMapLayerProxyModel, "Filter", None), "RasterLayer", 1)
+
+Filter_Vector = getattr(QgsMapLayerProxyModel, "VectorLayer", None)
+if Filter_Vector is None:
+    Filter_Vector = getattr(getattr(QgsMapLayerProxyModel, "Filter", None), "VectorLayer", 2)
+
+Filter_Polygon = getattr(QgsMapLayerProxyModel, "PolygonLayer", None)
+if Filter_Polygon is None:
+    Filter_Polygon = getattr(getattr(QgsMapLayerProxyModel, "Filter", None), "PolygonLayer", 16)
+
+# FileWidget storage mode
+SaveFile_Mode = getattr(QgsFileWidget, "SaveFile", None)
+if SaveFile_Mode is None:
+    SaveFile_Mode = getattr(getattr(QgsFileWidget, "StorageMode", None), "SaveFile", 0)
+
+# ColorRamp type
+Ramp_Interpolated = getattr(QgsColorRampShader, "Interpolated", None)
+if Ramp_Interpolated is None:
+    Ramp_Interpolated = getattr(getattr(QgsColorRampShader, "Type", None), "Interpolated", 0)
 
 from .sedinconnect.utils.params import ProcessingParams
 from .sedinconnect.core.processor import ConnectivityProcessor
@@ -103,7 +134,7 @@ def apply_arcgis_ic_colormap(layer: QgsRasterLayer):
 
         shader = QgsRasterShader()
         ramp = QgsColorRampShader()
-        ramp.setColorRampType(QgsColorRampShader.Interpolated)
+        ramp.setColorRampType(Ramp_Interpolated)
         ramp.setColorRampItemList(items)
         shader.setRasterShaderFunction(ramp)
 
@@ -127,7 +158,9 @@ class SedInConnectDialog(QDialog):
         self.setWindowTitle("SedInConnect 3.2 — Sediment Connectivity Assessment")
         self.resize(780, 720)
 
-        icon_path = os.path.join(os.path.dirname(__file__), 'icon.ico')
+        icon_path = os.path.join(os.path.dirname(__file__), 'icon.png')
+        if not os.path.exists(icon_path):
+            icon_path = os.path.join(os.path.dirname(__file__), 'logo2.png')
         if os.path.exists(icon_path):
             self.setWindowIcon(QIcon(icon_path))
 
@@ -142,7 +175,7 @@ class SedInConnectDialog(QDialog):
 
         # Title Header
         header = QLabel("<h2>SedInConnect 3.2</h2><p style='color: #444;'>Stand-alone Sediment Connectivity Assessment (MORPHEUS PRIN 2023-2026)</p>")
-        header.setAlignment(Qt.AlignCenter)
+        header.setAlignment(Qt_AlignCenter)
         main_layout.addWidget(header)
 
         # Group 1: Inputs
@@ -151,18 +184,18 @@ class SedInConnectDialog(QDialog):
 
         g_layout.addWidget(QLabel("DTM Raster Layer:"), 0, 0)
         self.dtm_combo = QgsMapLayerComboBox()
-        self.dtm_combo.setFilters(QgsMapLayerProxyModel.RasterLayer)
+        self.dtm_combo.setFilters(Filter_Raster)
         g_layout.addWidget(self.dtm_combo, 0, 1)
 
         g_layout.addWidget(QLabel("Target Layer (Streams/Outlets) [Optional]:"), 1, 0)
         self.target_combo = QgsMapLayerComboBox()
-        self.target_combo.setFilters(QgsMapLayerProxyModel.VectorLayer)
+        self.target_combo.setFilters(Filter_Vector)
         self.target_combo.setAllowEmptyLayer(True)
         g_layout.addWidget(self.target_combo, 1, 1)
 
         g_layout.addWidget(QLabel("Sink Layer (Depressions) [Optional]:"), 2, 0)
         self.sink_combo = QgsMapLayerComboBox()
-        self.sink_combo.setFilters(QgsMapLayerProxyModel.PolygonLayer)
+        self.sink_combo.setFilters(Filter_Polygon)
         self.sink_combo.setAllowEmptyLayer(True)
         g_layout.addWidget(self.sink_combo, 2, 1)
 
@@ -209,7 +242,7 @@ class SedInConnectDialog(QDialog):
         grp_out = QGroupBox("Output File")
         o_layout = QHBoxLayout(grp_out)
         self.out_file_widget = QgsFileWidget()
-        self.out_file_widget.setStorageMode(QgsFileWidget.SaveFile)
+        self.out_file_widget.setStorageMode(SaveFile_Mode)
         self.out_file_widget.setFilter("GeoTIFF (*.tif *.TIF)")
         o_layout.addWidget(self.out_file_widget)
         main_layout.addWidget(grp_out)

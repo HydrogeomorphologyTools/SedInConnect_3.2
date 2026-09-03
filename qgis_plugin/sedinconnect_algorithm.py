@@ -2,16 +2,13 @@
 """
 QGIS Processing Algorithm for SedInConnect 3.2.
 Executes the native Numba/NumPy 100% bit-exact sediment connectivity pipeline.
+Cross-platform Qt5/Qt6 compatible.
 """
 
 import os
 import sys
 import time
 from pathlib import Path
-
-_p_dir = str(Path(__file__).resolve().parent)
-if _p_dir not in sys.path:
-    sys.path.insert(0, _p_dir)
 
 from qgis.core import (
     QgsProcessing,
@@ -24,6 +21,7 @@ from qgis.core import (
     QgsProcessingOutputRasterLayer,
     QgsProcessingException
 )
+
 try:
     from qgis.PyQt.QtGui import QIcon
 except ImportError:
@@ -84,6 +82,8 @@ class SedInConnectAlgorithm(QgsProcessingAlgorithm):
 
     def icon(self):
         icon_path = os.path.join(os.path.dirname(__file__), 'icon.png')
+        if not os.path.exists(icon_path):
+            icon_path = os.path.join(os.path.dirname(__file__), 'logo2.png')
         if os.path.exists(icon_path):
             return QIcon(icon_path)
         return super().icon()
@@ -184,6 +184,7 @@ class SedInConnectAlgorithm(QgsProcessingAlgorithm):
             track_app_launch('QGIS_Processing')
         except Exception:
             pass
+
         dtm_layer = self.parameterAsRasterLayer(parameters, self.INPUT_DTM, context)
         if not dtm_layer or not dtm_layer.isValid():
             raise QgsProcessingException('Invalid input DTM layer provided.')
