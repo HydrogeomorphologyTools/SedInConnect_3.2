@@ -59,16 +59,22 @@ class ConnectivityProcessor:
         filtered_dtm_path = None
 
         try:
-            self.log("--- Starting SedInConnect 3.2 Processing ---")
+                    self.log("--- Starting SedInConnect 3.2 Processing ---")
         try:
             import numba
             self.log("[ENGINE STATUS] JIT-Accelerated calculation engine active (Numba).")
         except ImportError:
+            import platform
+            os_sys = platform.system()
             self.log("[WARNING] 'numba' JIT compiler is not installed! Running in pure NumPy fallback mode.")
-            self.log("          Calculations are 100% exact but slower. Strongly recommend installing numba for 10x-20x speedup.")
-
-            # 0. Filter DTM (values < 0 or > 9000 to NoData)
-            self.log("[STAGE 1/4] DTM Conditioning & Pre-processing...")
+            self.log("          Calculations are 100% exact but slower on large datasets.")
+            if os_sys == "Linux":
+                self.log("          [TIP for Linux]: Open terminal and run: sudo apt install python3-numba (or: pip install --user --break-system-packages numba)")
+            elif os_sys == "Darwin":
+                self.log("          [TIP for macOS]: Open terminal and run: pip3 install --user numba")
+            else:
+                self.log("          [TIP for Windows]: Open OSGeo4W Shell or CMD and run: pip install numba")
+        self.log("[STAGE 1/4] DTM Conditioning & Pre-processing...")
             self.log("Filtering DTM (masking values < 0 or > 9000)...")
             filtered_dtm_path = self.filter_dtm(params.dtm_path)
             if filtered_dtm_path:

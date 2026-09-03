@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
 """
 SedInConnect QGIS Plugin entry point.
-Cross-platform, Qt5/Qt6 independent, and self-healing with prominent fallback notifications.
+Cross-platform, Qt5/Qt6 independent, self-healing with dynamic OS-tailored help.
 """
 
 import sys
+import platform
 import subprocess
 from pathlib import Path
 
@@ -14,11 +15,52 @@ if _p_dir not in sys.path:
     sys.path.insert(0, _p_dir)
 
 
+def get_os_tailored_instructions():
+    """Generate precise, copy-pasteable installation instructions tailored to the user's OS."""
+    os_name = platform.system()
+    if os_name == "Linux":
+        pkg_cmd = "sudo apt install python3-numba"
+        try:
+            if Path("/etc/os-release").exists():
+                txt = Path("/etc/os-release").read_text(encoding="utf-8", errors="ignore").lower()
+                if "fedora" in txt or "rhel" in txt:
+                    pkg_cmd = "sudo dnf install python3-numba"
+                elif "arch" in txt or "manjaro" in txt:
+                    pkg_cmd = "sudo pacman -S python-numba"
+        except Exception:
+            pass
+
+        return (
+            f"<b>Detected OS: Linux ({platform.machine()})</b><br><br>"
+            f"<b>Recommended solution for your system:</b><br>"
+            f"Open Terminal and run:<br>"
+            f"<code>{pkg_cmd}</code><br><br>"
+            f"<i>Alternative (pip in user space):</i><br>"
+            f"<code>{sys.executable} -m pip install --user --break-system-packages numba</code>"
+        )
+    elif os_name == "Darwin":
+        return (
+            "<b>Detected OS: macOS (Apple Silicon / Intel)</b><br><br>"
+            "<b>Recommended solution for your system:</b><br>"
+            "Open Terminal and run:<br>"
+            "<code>pip3 install --user numba</code><br><br>"
+            "<i>Or inside QGIS Python Console:</i><br>"
+            "<code>import subprocess, sys; subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--user', 'numba'])</code>"
+        )
+    else:
+        return (
+            "<b>Detected OS: Windows</b><br><br>"
+            "<b>Recommended solution for your system:</b><br>"
+            "1. In the Windows Start menu, search and open <b>OSGeo4W Shell</b>.<br>"
+            "2. Run: <code>pip install numba</code>"
+        )
+
+
 def ensure_dependencies():
     """
     Check if numba JIT compiler is available for maximum speed.
-    If missing, prompts user for automatic 1-click installation with PEP 668 / user-space flags.
-    If declined or if installation fails, displays a clear warning alert with installation instructions,
+    If missing, prompts user for automatic 1-click installation.
+    If declined or if installation fails, displays a clear OS-tailored warning alert,
     then proceeds smoothly in pure NumPy/SciPy fallback mode.
     """
     try:
@@ -50,7 +92,6 @@ def ensure_dependencies():
 
     if res == btn_yes:
         installed = False
-        # Try installation strategies (PEP 668 --break-system-packages, --user, standard)
         for cmd in [
             [sys.executable, "-m", "pip", "install", "--user", "--break-system-packages", "numba"],
             [sys.executable, "-m", "pip", "install", "--user", "numba"],
@@ -72,18 +113,15 @@ def ensure_dependencies():
             )
             return
 
-    # If user chose 'No' or auto-install failed, show clear warning with manual steps
+    os_info = get_os_tailored_instructions()
     QMessageBox.warning(
         None,
-        "SedInConnect — Pure NumPy Fallback Mode Active",
-        "⚠️ <b>Numba is not installed.</b><br><br>"
+        "SedInConnect — Pure NumPy Fallback Active",
+        "⚠️ <b>Numba JIT is not installed.</b><br><br>"
         "SedInConnect will proceed using the <b>pure native NumPy/SciPy fallback engine</b>.<br><br>"
-        "<b>Note on Precision:</b> Results are <b>100% mathematically exact and identical</b>.<br>"
-        "<b>Note on Performance:</b> Calculations will be noticeably slower on large catchments.<br><br>"
-        "<b>To achieve 10x–20x maximum speedup, we strongly recommend installing 'numba':</b><br>"
-        "• <b>Linux (Ubuntu/Debian):</b> Open Terminal and run: <code>sudo apt install python3-numba</code><br>"
-        "• <b>Windows:</b> Open OSGeo4W Shell and run: <code>pip install numba</code><br>"
-        "• <b>macOS / Pip:</b> In Terminal run: <code>pip3 install --user numba</code>"
+        "<b>• Numerical Precision:</b> Results are <b>100% mathematically exact and identical</b>.<br>"
+        "<b>• Calculation Speed:</b> Noticeably slower on large catchments without JIT.<br><br>"
+        f"{os_info}"
     )
 
 
