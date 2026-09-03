@@ -55,6 +55,57 @@ arcpy.sedinconnect.CalculateSedimentConnectivity(
 
 ---
 
+
+---
+
+## ⚡ High-Performance Acceleration: Installing Numba (Optional but Recommended)
+
+> [!TIP]
+> **Performance Note:** SedInConnect includes a 100% pure NumPy/SciPy fallback and will run even without Numba. However, **Numba JIT compilation provides a 10x–20x calculation speedup** (reducing runtime from minutes to a few seconds on large multi-million pixel DEMs).
+
+If you want to ensure maximum calculation performance on your operating system:
+
+### 🪟 Windows
+* **Stand-alone Executable (`SedInConnect_3.2.exe`):** Numba is already pre-compiled inside. No installation required.
+* **QGIS on Windows:** Open **OSGeo4W Shell** (search in the Windows Start menu) and run:
+  ```cmd
+  pip install numba
+  ```
+  *(Or simply click **"Yes"** on the automated prompt when loading the plugin in QGIS).*
+* **Standard Python environment:**
+  ```cmd
+  pip install numba
+  ```
+
+### 🐧 Linux (Ubuntu, Debian, Fedora, Arch)
+On modern Linux distributions (with PEP 668 environment protection):
+* **Ubuntu / Debian / Linux Mint (Recommended via native package manager):**
+  ```bash
+  sudo apt update && sudo apt install -y python3-numba
+  ```
+* **Fedora / RedHat:**
+  ```bash
+  sudo dnf install python3-numba
+  ```
+* **Arch Linux / Manjaro:**
+  ```bash
+  sudo pacman -S python-numba
+  ```
+* **Via user-space pip:**
+  ```bash
+  python3 -m pip install --user --break-system-packages numba
+  ```
+
+### 🍏 macOS
+* **Terminal / Homebrew Python:**
+  ```bash
+  pip3 install --user numba
+  ```
+* **Inside QGIS on macOS:** Open the **Python Console** in QGIS (*Plugins ➔ Python Console*) and run:
+  ```python
+  import subprocess, sys; subprocess.check_call([sys.executable, "-m", "pip", "install", "--user", "numba"])
+  ```
+
 ## 📚 Scientific References
 1. **Cavalli, M., Trevisani, S., Comiti, F., & Marchi, L. (2013).** Geomorphometric assessment of spatial sediment connectivity in small Alpine catchments. *Geomorphology*, 188, 31-41. [doi:10.1016/j.geomorph.2012.05.007](https://doi.org/10.1016/j.geomorph.2012.05.007)
 2. **Crema, S., & Cavalli, M. (2018).** SedInConnect: a stand-alone, free and open source tool for the assessment of sediment connectivity. *Computers & Geosciences*, 111, 39-45. [doi:10.1016/j.cageo.2017.10.009](https://doi.org/10.1016/j.cageo.2017.10.009)
