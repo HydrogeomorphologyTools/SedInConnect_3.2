@@ -19,9 +19,16 @@ import tempfile
 from pathlib import Path
 
 # Add toolbox directory to sys.path
-_tb_dir = str(Path(__file__).resolve().parent)
+try:
+    _tb_dir = str(Path(__file__).resolve().parent)
+except Exception:
+    _tb_dir = os.path.dirname(os.path.abspath(__file__)) if '__file__' in globals() else os.getcwd()
+
 if _tb_dir not in sys.path:
     sys.path.insert(0, _tb_dir)
+_pkg_sub = str(Path(_tb_dir) / "sedinconnect")
+if _pkg_sub not in sys.path:
+    sys.path.insert(0, _pkg_sub)
 
 try:
     import arcpy
