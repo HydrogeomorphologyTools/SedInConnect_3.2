@@ -1,7 +1,8 @@
 import numpy as np
 import time
 from pathlib import Path
-from multiprocessing import Pool, cpu_count
+from concurrent.futures import ThreadPoolExecutor
+from os import cpu_count
 from scipy import signal
 from osgeo import gdal
 from sedinconnect.utils.raster import LargeFileRasterReader, save_raster
@@ -148,8 +149,8 @@ class WeightCalculator:
         # Process chunks in parallel
         results = []
 
-        with Pool(processes=n_workers) as pool:
-            for idx, ri_chunk in enumerate(pool.imap(_process_chunk_roughness_global, chunk_args)):
+        with ThreadPoolExecutor(max_workers=n_workers) as executor:
+            for idx, ri_chunk in enumerate(executor.map(_process_chunk_roughness_global, chunk_args)):
                 results.append(ri_chunk)
 
                 if (idx + 1) % max(1, total_chunks // 10) == 0 or (idx + 1) == total_chunks:
