@@ -86,53 +86,42 @@ from .sedinconnect.utils.telemetry import track_app_launch
 
 def apply_arcgis_ic_colormap(layer: QgsRasterLayer):
     """
-    Apply an ArcGIS-style Stretched Cold-to-Hot colormap to the IC raster:
-    - Minimum / Negative values (Low Connectivity): Deep Lapislazuli Blue (#0D2B66 / #1E40AF)
-    - Transitional values: Cyan (#06B6D4) -> Lime Yellow (#EAB308) -> Vivid Orange (#EA580C)
-    - Maximum / Positive values (High Connectivity): Vibrant Red (#DC2626)
+    Apply a rich ArcGIS-style Cold-to-Hot colormap with enhanced warm reds:
+    - Low Connectivity: Lapislazuli Blue (#0F2D6E) -> Sky Blue (#0284C7)
+    - Median Connectivity: Emerald Green (#10B981) -> Golden Yellow (#FACC15)
+    - High Connectivity: Rich Orange (#F97316) -> Fiery Red (#EF4444) -> Deep Crimson (#881337)
     """
     try:
         if not layer.isValid():
             return
 
         provider = layer.dataProvider()
-        stats = provider.bandStatistics(1, QgsRasterBandStats.Min | QgsRasterBandStats.Max)
+        stats = provider.bandStatistics(1, QgsRasterBandStats.Min | QgsRasterBandStats.Max | QgsRasterBandStats.Mean | QgsRasterBandStats.StdDev)
         min_val = stats.minValue
         max_val = stats.maxValue
+        mean_val = stats.mean
+        std_val = stats.stdDev
 
         if np.isnan(min_val) or np.isnan(max_val) or min_val >= max_val:
             min_val = -10.0
             max_val = 5.0
+            mean_val = -2.5
+            std_val = 2.0
 
-        val_range = max_val - min_val
+        # Contrast stretch: 2 standard deviations around mean, clamped to min/max
+        s_min = max(min_val, mean_val - 2.2 * std_val)
+        s_max = min(max_val, mean_val + 2.2 * std_val)
+        val_range = s_max - s_min
 
-        # 5-stop smooth interpolated gradient (Cold to Hot)
+        # 7-stop rich warm spectrum with vibrant reds
         items = [
-            QgsColorRampShader.ColorRampItem(
-                min_val,
-                QColor(15, 45, 110),  # Deep Lapislazuli Blue
-                f"{min_val:.2f} (Low IC)"
-            ),
-            QgsColorRampShader.ColorRampItem(
-                min_val + 0.25 * val_range,
-                QColor(0, 180, 220),  # Cyan
-                f"{min_val + 0.25 * val_range:.2f}"
-            ),
-            QgsColorRampShader.ColorRampItem(
-                min_val + 0.50 * val_range,
-                QColor(255, 230, 40),  # Bright Yellow
-                f"{min_val + 0.50 * val_range:.2f}"
-            ),
-            QgsColorRampShader.ColorRampItem(
-                min_val + 0.75 * val_range,
-                QColor(245, 120, 20),  # Vibrant Orange
-                f"{min_val + 0.75 * val_range:.2f}"
-            ),
-            QgsColorRampShader.ColorRampItem(
-                max_val,
-                QColor(220, 20, 20),  # Vibrant Red
-                f"{max_val:.2f} (High IC)"
-            )
+            QgsColorRampShader.ColorRampItem(min_val, QColor(15, 45, 110), f"{min_val:.2f} (Low IC)"),
+            QgsColorRampShader.ColorRampItem(s_min + 0.15 * val_range, QColor(2, 132, 199), f"{s_min + 0.15 * val_range:.2f}"),
+            QgsColorRampShader.ColorRampItem(s_min + 0.35 * val_range, QColor(16, 185, 129), f"{s_min + 0.35 * val_range:.2f}"),
+            QgsColorRampShader.ColorRampItem(s_min + 0.50 * val_range, QColor(250, 204, 21), f"{s_min + 0.50 * val_range:.2f}"),
+            QgsColorRampShader.ColorRampItem(s_min + 0.65 * val_range, QColor(249, 115, 22), f"{s_min + 0.65 * val_range:.2f}"),
+            QgsColorRampShader.ColorRampItem(s_min + 0.82 * val_range, QColor(239, 68, 68), f"{s_min + 0.82 * val_range:.2f}"),
+            QgsColorRampShader.ColorRampItem(max_val, QColor(136, 19, 55), f"{max_val:.2f} (High IC)")
         ]
 
         shader = QgsRasterShader()
