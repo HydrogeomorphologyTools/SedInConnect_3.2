@@ -27,7 +27,7 @@ class SedInConnectProvider(QgsProcessingProvider):
         return 'SedInConnect Sediment Connectivity'
 
     def icon(self):
-        icon_path = os.path.join(os.path.dirname(__file__), 'icon.ico')
+        icon_path = os.path.join(os.path.dirname(__file__), 'icon.png')
         if os.path.exists(icon_path):
             return QIcon(icon_path)
         return super().icon()
