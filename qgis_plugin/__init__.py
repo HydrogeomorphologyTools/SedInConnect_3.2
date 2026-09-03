@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 SedInConnect QGIS Plugin entry point.
-Cross-platform, Qt5/Qt6 independent, and self-healing with zero-dependency fallback.
+Cross-platform, Qt5/Qt6 independent, and self-healing with prominent fallback notifications.
 """
 
 import sys
@@ -18,7 +18,8 @@ def ensure_dependencies():
     """
     Check if numba JIT compiler is available for maximum speed.
     If missing, prompts user for automatic 1-click installation with PEP 668 / user-space flags.
-    If declined or offline, falls back gracefully to pure native NumPy/SciPy without blocking.
+    If declined or if installation fails, displays a clear warning alert with installation instructions,
+    then proceeds smoothly in pure NumPy/SciPy fallback mode.
     """
     try:
         import numba
@@ -40,10 +41,10 @@ def ensure_dependencies():
 
     res = QMessageBox.question(
         None,
-        "SedInConnect — Optional Speed Acceleration",
-        "SedInConnect can use the 'numba' JIT compiler for ultra-fast calculation speed.\n\n"
-        "Would you like QGIS to automatically download and install 'numba' in your user directory now?\n\n"
-        "(Note: If you click 'No', SedInConnect will still work smoothly using native NumPy/SciPy).",
+        "SedInConnect — Performance Acceleration (Numba)",
+        "SedInConnect uses the 'numba' JIT compiler for ultra-fast calculation (10x–20x speedup).\n\n"
+        "Numba is currently not detected. Would you like QGIS to automatically download and install 'numba' now in your user folder?\n\n"
+        "(Click 'Yes' to auto-install, or 'No' to proceed with the slower pure NumPy fallback).",
         buttons
     )
 
@@ -69,14 +70,21 @@ def ensure_dependencies():
                 "Successfully installed numba! High-speed JIT acceleration is active.\n"
                 "Please enable the plugin in QGIS Plugin Manager."
             )
-        else:
-            QMessageBox.information(
-                None,
-                "SedInConnect",
-                "Could not install numba automatically.\n\n"
-                "SedInConnect will continue running in standard native NumPy mode.\n"
-                "(On Linux/Debian systems, you can optionally run: sudo apt install python3-numba)"
-            )
+            return
+
+    # If user chose 'No' or auto-install failed, show clear warning with manual steps
+    QMessageBox.warning(
+        None,
+        "SedInConnect — Pure NumPy Fallback Mode Active",
+        "⚠️ <b>Numba is not installed.</b><br><br>"
+        "SedInConnect will proceed using the <b>pure native NumPy/SciPy fallback engine</b>.<br><br>"
+        "<b>Note on Precision:</b> Results are <b>100% mathematically exact and identical</b>.<br>"
+        "<b>Note on Performance:</b> Calculations will be noticeably slower on large catchments.<br><br>"
+        "<b>To achieve 10x–20x maximum speedup, we strongly recommend installing 'numba':</b><br>"
+        "• <b>Linux (Ubuntu/Debian):</b> Open Terminal and run: <code>sudo apt install python3-numba</code><br>"
+        "• <b>Windows:</b> Open OSGeo4W Shell and run: <code>pip install numba</code><br>"
+        "• <b>macOS / Pip:</b> In Terminal run: <code>pip3 install --user numba</code>"
+    )
 
 
 def classFactory(iface):

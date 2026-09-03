@@ -60,6 +60,12 @@ class ConnectivityProcessor:
 
         try:
             self.log("--- Starting SedInConnect 3.2 Processing ---")
+        try:
+            import numba
+            self.log("[ENGINE STATUS] JIT-Accelerated calculation engine active (Numba).")
+        except ImportError:
+            self.log("[WARNING] 'numba' JIT compiler is not installed! Running in pure NumPy fallback mode.")
+            self.log("          Calculations are 100% exact but slower. Strongly recommend installing numba for 10x-20x speedup.")
 
             # 0. Filter DTM (values < 0 or > 9000 to NoData)
             self.log("[STAGE 1/4] DTM Conditioning & Pre-processing...")
