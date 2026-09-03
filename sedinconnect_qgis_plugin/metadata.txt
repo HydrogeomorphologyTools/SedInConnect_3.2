@@ -1,0 +1,15 @@
+[general]
+name=SedInConnect
+qgisMinimumVersion=3.0
+description=Stand-alone sediment connectivity index (IC) assessment tool for catchments
+version=3.2.0
+author=Stefano Crema, Marco Cavalli (CNR-IRPI)
+email=stefano.crema@irpi.cnr.it
+about=SedInConnect calculates the index of sediment connectivity (IC) using pure native D8 and D-infinity flow routing and surface roughness weighting factor (Cavalli et al., 2013). Developed at CNR-IRPI within the MORPHEUS PRIN 2023-2026 project.
+tracker=https://github.com/HydrogeomorphologyTools/SedInConnect_3.2/issues
+repository=https://github.com/HydrogeomorphologyTools/SedInConnect_3.2
+tags=hydrology, geomorphology, connectivity, sediment, dtm, dem, terrain analysis, cavalli, borselli, morpheus
+category=Raster
+icon=icon.png
+experimental=False
+deprecated=False
