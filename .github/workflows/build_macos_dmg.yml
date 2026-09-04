@@ -1,0 +1,42 @@
+name: Build macOS DMG Standalone App
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+jobs:
+  build-macos:
+    name: Build macOS Standalone (.app & .dmg)
+    runs-on: macos-14 # Apple Silicon (M1/M2/M3) runner
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install System GDAL and Utilities
+        run: |
+          brew install gdal create-dmg
+
+      - name: Install Python Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install "gdal==$(gdal-config --version)"
+          pip install numpy numba scipy matplotlib PyQt5 pyinstaller
+          pip install -e python_package
+
+      - name: Build macOS App Bundle and DMG
+        run: |
+          python build_macos_app.py
+
+      - name: Upload DMG Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: SedInConnect_3.2_macOS_AppleSilicon
+          path: dist/SedInConnect_3.2_macOS.dmg
+          if-no-files-found: warn
