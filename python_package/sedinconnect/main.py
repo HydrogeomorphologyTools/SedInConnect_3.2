@@ -125,7 +125,7 @@ def run_cli(args):
             weight_path=Path(args.weight) if args.weight else None,
             target_path=Path(args.target) if args.target else None,
             sink_path=Path(args.sink) if args.sink else None,
-            use_cavalli_weight=args.auto_weight,
+            use_cavalli_weight=args.auto_weight or (args.weight is None),
             normalize_weight=args.normalize,
             save_components=args.save_components,
             window_size=args.window_size,
