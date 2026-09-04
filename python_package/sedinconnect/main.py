@@ -182,18 +182,23 @@ def main():
     parser.add_argument('--fill-dtm', action='store_true',
                         help='Fill DTM depressions (Priority-Flood algorithm) before computing flow directions.')
 
-    # If no arguments (or only --gui), start GUI
-    if len(sys.argv) == 1 or (len(sys.argv) == 2 and sys.argv[1] == '--gui'):
+    # Filter out macOS Finder Process Serial Number arguments (-psn_...)
+    sys.argv = [a for a in sys.argv if not a.startswith('-psn')]
+
+    # If no CLI computation flags are provided, start GUI by default
+    if len(sys.argv) <= 1 or (len(sys.argv) == 2 and sys.argv[1] == '--gui'):
         start_gui = True
     else:
-        parsed_args = parser.parse_args()
-        if parsed_args.gui:
+        try:
+            parsed_args, unknown = parser.parse_known_args()
+            if parsed_args.gui:
+                start_gui = True
+            elif parsed_args.params or (parsed_args.dtm and parsed_args.output):
+                start_gui = False
+            else:
+                start_gui = True
+        except Exception:
             start_gui = True
-        elif parsed_args.params or (parsed_args.dtm and parsed_args.output):
-            start_gui = False
-        else:
-            parser.print_help()
-            sys.exit(1)
 
     gdal.AllRegister()
     gdal.UseExceptions()
