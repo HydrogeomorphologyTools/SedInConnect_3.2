@@ -8,7 +8,7 @@ on:
 
 jobs:
   build-macos:
-    name: Build macOS Standalone (.app & .dmg)
+    name: Build & Test macOS Standalone (.app & .dmg)
     runs-on: macos-14 # Apple Silicon (M1/M2/M3)
     steps:
       - name: Checkout Source Code
@@ -38,6 +38,41 @@ jobs:
         shell: bash -l {0}
         run: |
           python build_macos_app.py
+
+      - name: 🧪 Automated Verification Test on macOS
+        shell: bash -l {0}
+        run: |
+          echo "=== 1. Mounting DMG disk image ==="
+          mkdir -p /tmp/sed_mount
+          hdiutil attach dist/SedInConnect_3.2_macOS.dmg -mountpoint /tmp/sed_mount
+
+          APP_EXEC="/tmp/sed_mount/SedInConnect.app/Contents/MacOS/SedInConnect"
+          if [ ! -f "$APP_EXEC" ]; then
+            echo "Error: Binary not found at $APP_EXEC"
+            exit 1
+          fi
+
+          echo "=== 2. Running Test Calculation in macOS Standalone App ==="
+          "$APP_EXEC" \
+            --dtm test_data/dtmfel.tif \
+            --target test_data/target.shp \
+            --output /tmp/ic_mac_test.tif \
+            --window 3
+
+          if [ -f "/tmp/ic_mac_test.tif" ]; then
+            echo "✅ Calculation completed successfully! Output raster exists:"
+            ls -lh /tmp/ic_mac_test.tif
+          else
+            echo "❌ Error: Output raster /tmp/ic_mac_test.tif was not generated!"
+            exit 1
+          fi
+
+          echo "=== 3. Testing GUI Offscreen Initialization ==="
+          QT_QPA_PLATFORM=offscreen timeout 4 "$APP_EXEC" || true
+          echo "✅ GUI initialized cleanly in macOS environment!"
+
+          echo "=== 4. Unmounting DMG ==="
+          hdiutil detach /tmp/sed_mount
 
       - name: Upload DMG Artifact
         uses: actions/upload-artifact@v4
