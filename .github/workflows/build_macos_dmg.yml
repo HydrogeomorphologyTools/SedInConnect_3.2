@@ -9,28 +9,33 @@ on:
 jobs:
   build-macos:
     name: Build macOS Standalone (.app & .dmg)
-    runs-on: macos-14 # Apple Silicon (M1/M2/M3) runner
+    runs-on: macos-14 # Apple Silicon (M1/M2/M3)
     steps:
       - name: Checkout Source Code
         uses: actions/checkout@v4
 
-      - name: Set up Python 3.11
-        uses: actions/setup-python@v5
+      - name: Set up Micromamba (Pre-compiled GDAL & Numba)
+        uses: mamba-org/setup-micromamba@v1
         with:
-          python-version: '3.11'
+          environment-name: sedinconnect-build
+          create-args: >-
+            python=3.11
+            gdal
+            numba
+            numpy
+            scipy
+            matplotlib
+            pyqt
+            pyinstaller
+          channels: conda-forge
 
-      - name: Install System GDAL and Utilities
+      - name: Install SedInConnect Package
+        shell: bash -l {0}
         run: |
-          brew install gdal create-dmg
-
-      - name: Install Python Dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install "gdal==$(gdal-config --version)"
-          pip install numpy numba scipy matplotlib PyQt5 pyinstaller
           pip install -e python_package
 
       - name: Build macOS App Bundle and DMG
+        shell: bash -l {0}
         run: |
           python build_macos_app.py
 
@@ -39,4 +44,4 @@ jobs:
         with:
           name: SedInConnect_3.2_macOS_AppleSilicon
           path: dist/SedInConnect_3.2_macOS.dmg
-          if-no-files-found: warn
+          if-no-files-found: error

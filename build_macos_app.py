@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Build standalone macOS SedInConnect.app and SedInConnect.dmg
-Contains all dependencies: GDAL, PROJ, Numba, NumPy, SciPy, Matplotlib, PyQt5.
+Using pre-compiled Conda/Micromamba binaries (GDAL, PROJ, Numba, NumPy, SciPy, Matplotlib, PyQt5).
 """
 
 import os
@@ -15,30 +15,37 @@ os.chdir(repo_root)
 
 print("=== Building SedInConnect for macOS ===")
 
-# Detect GDAL and PROJ data directories to bundle inside the app
+# Detect GDAL and PROJ data directories (Conda prefix or system)
+conda_prefix = os.environ.get("CONDA_PREFIX", "")
 gdal_data_dir = ""
 proj_lib_dir = ""
-try:
-    gdal_data_dir = subprocess.check_output(["gdal-config", "--datadir"]).decode().strip()
-    print(f"Found GDAL Data directory: {gdal_data_dir}")
-except Exception as e:
-    print(f"Warning detecting gdal-config: {e}")
 
-try:
-    brew_prefix = subprocess.check_output(["brew", "--prefix"]).decode().strip()
-    candidate_proj = Path(brew_prefix) / "share" / "proj"
-    if candidate_proj.exists():
-        proj_lib_dir = str(candidate_proj)
-        print(f"Found PROJ Data directory: {proj_lib_dir}")
-except Exception as e:
-    print(f"Warning detecting brew proj: {e}")
+if conda_prefix:
+    p_gdal = Path(conda_prefix) / "share" / "gdal"
+    p_proj = Path(conda_prefix) / "share" / "proj"
+    if p_gdal.exists():
+        gdal_data_dir = str(p_gdal)
+        print(f"Found Conda GDAL Data: {gdal_data_dir}")
+    if p_proj.exists():
+        proj_lib_dir = str(p_proj)
+        print(f"Found Conda PROJ Data: {proj_lib_dir}")
 
-# Locate icon
-icon_path = repo_root / "sedinconnect" / "assets" / "logo2.ico"
-if not icon_path.exists():
-    icon_path = repo_root / "python_package" / "sedinconnect" / "assets" / "logo2.ico"
+if not gdal_data_dir:
+    try:
+        gdal_data_dir = subprocess.check_output(["gdal-config", "--datadir"]).decode().strip()
+    except Exception:
+        pass
 
-# Create a runtime hook to automatically set GDAL_DATA and PROJ_LIB in the frozen app
+if not proj_lib_dir:
+    try:
+        brew_prefix = subprocess.check_output(["brew", "--prefix"]).decode().strip()
+        candidate = Path(brew_prefix) / "share" / "proj"
+        if candidate.exists():
+            proj_lib_dir = str(candidate)
+    except Exception:
+        pass
+
+# Runtime hook for embedded paths
 hook_code = """
 import os
 import sys
@@ -56,6 +63,11 @@ if getattr(sys, 'frozen', False):
 """
 hook_file = repo_root / "runtime_hook_gdal.py"
 hook_file.write_text(hook_code, encoding="utf-8")
+
+# Locate icon
+icon_path = repo_root / "sedinconnect" / "assets" / "logo2.ico"
+if not icon_path.exists():
+    icon_path = repo_root / "python_package" / "sedinconnect" / "assets" / "logo2.ico"
 
 # Build PyInstaller command
 cmd = [
@@ -104,7 +116,7 @@ if not app_path.exists():
 
 print(f"Successfully created: {app_path}")
 
-# Create DMG if on macOS
+# Create DMG with Applications symlink
 if sys.platform == "darwin":
     print("Creating macOS DMG installer image...")
     dmg_temp_dir = repo_root / "dist" / "dmg_root"
@@ -112,13 +124,13 @@ if sys.platform == "darwin":
         shutil.rmtree(dmg_temp_dir)
     dmg_temp_dir.mkdir(parents=True, exist_ok=True)
 
-    # Copy .app to dmg root
     shutil.copytree(app_path, dmg_temp_dir / "SedInConnect.app")
 
-    # Create link to /Applications
-    os.symlink("/Applications", str(dmg_temp_dir / "Applications"))
+    try:
+        os.symlink("/Applications", str(dmg_temp_dir / "Applications"))
+    except Exception as e:
+        print(f"Symlink warning: {e}")
 
-    # Build DMG with hdiutil
     subprocess.run([
         "hdiutil", "create",
         "-volname", "SedInConnect 3.2",
