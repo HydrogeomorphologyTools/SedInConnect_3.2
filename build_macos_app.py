@@ -15,6 +15,24 @@ os.chdir(repo_root)
 
 print("=== Building SedInConnect for macOS ===")
 
+# Detect entry point and assets
+main_script = repo_root / "python_package" / "sedinconnect" / "main.py"
+if not main_script.exists():
+    main_script = repo_root / "sedinconnect" / "main.py"
+
+assets_dir = repo_root / "python_package" / "sedinconnect" / "assets"
+if not assets_dir.exists():
+    assets_dir = repo_root / "sedinconnect" / "assets"
+
+icon_path = assets_dir / "logo2.ico"
+
+print(f"Main script path: {main_script}")
+print(f"Assets directory: {assets_dir}")
+
+if not main_script.exists():
+    print(f"Error: {main_script} does not exist!")
+    sys.exit(1)
+
 # Detect GDAL and PROJ data directories (Conda prefix or system)
 conda_prefix = os.environ.get("CONDA_PREFIX", "")
 gdal_data_dir = ""
@@ -64,19 +82,14 @@ if getattr(sys, 'frozen', False):
 hook_file = repo_root / "runtime_hook_gdal.py"
 hook_file.write_text(hook_code, encoding="utf-8")
 
-# Locate icon
-icon_path = repo_root / "sedinconnect" / "assets" / "logo2.ico"
-if not icon_path.exists():
-    icon_path = repo_root / "python_package" / "sedinconnect" / "assets" / "logo2.ico"
-
-# Build PyInstaller command
+# Build PyInstaller command (Options first, script path last)
 cmd = [
     sys.executable, "-m", "PyInstaller",
     "--noconfirm",
     "--windowed",
     "--name", "SedInConnect",
     "--runtime-hook", str(hook_file),
-    "--add-data", f"{repo_root / 'sedinconnect' / 'assets'}:sedinconnect/assets",
+    "--add-data", f"{assets_dir}:sedinconnect/assets",
     "--hidden-import", "osgeo",
     "--hidden-import", "osgeo.gdal",
     "--hidden-import", "osgeo.gdal_array",
@@ -92,7 +105,6 @@ cmd = [
     "--collect-all", "osgeo",
     "--collect-all", "numba",
     "--collect-all", "sedinconnect",
-    str(repo_root / "sedinconnect" / "main.py")
 ]
 
 if gdal_data_dir and Path(gdal_data_dir).exists():
@@ -103,6 +115,9 @@ if proj_lib_dir and Path(proj_lib_dir).exists():
 
 if icon_path.exists():
     cmd.extend(["--icon", str(icon_path)])
+
+# Script path must be the last argument
+cmd.append(str(main_script))
 
 print("Running PyInstaller...")
 subprocess.check_call(cmd)
